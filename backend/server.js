@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 require('dotenv').config();
+const { testConnection } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +59,17 @@ app.use('/api/fiscal', fiscalRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/store', storeRoutes);
 
+// Health check
+app.get('/health', async (req, res) => {
+  const database = await testConnection();
+  res.status(database ? 200 : 503).json({
+    status: database ? 'ok' : 'degraded',
+    app: 'ModaControl Pro',
+    database: database ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Admin routes
 app.get('/admin', (req, res) => {
   res.render('admin/index');
@@ -109,6 +121,7 @@ app.listen(PORT, () => {
   console.log(`💰 PDV: http://localhost:${PORT}/pdv`);
   console.log(`🔑 Login: admin@modacontrol.com.br / admin123`);
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  testConnection();
 });
 
 module.exports = app;
