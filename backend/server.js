@@ -1,0 +1,114 @@
+const express = require('express');
+const path = require('path');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors({
+  origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Static files
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// View engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const productRoutes = require('./routes/products');
+const categoryRoutes = require('./routes/categories');
+const customerRoutes = require('./routes/customers');
+const orderRoutes = require('./routes/orders');
+const stockRoutes = require('./routes/stock');
+const pdvRoutes = require('./routes/pdv');
+const financialRoutes = require('./routes/financial');
+const reportRoutes = require('./routes/reports');
+const settingsRoutes = require('./routes/settings');
+const supplierRoutes = require('./routes/suppliers');
+const sellerRoutes = require('./routes/sellers');
+const couponRoutes = require('./routes/coupons');
+const fiscalRoutes = require('./routes/fiscal');
+const dashboardRoutes = require('./routes/dashboard');
+const storeRoutes = require('./routes/store');
+
+// Use routes
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/stock', stockRoutes);
+app.use('/api/pdv', pdvRoutes);
+app.use('/api/financial', financialRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/suppliers', supplierRoutes);
+app.use('/api/sellers', sellerRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/fiscal', fiscalRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/store', storeRoutes);
+
+// Admin routes
+app.get('/admin', (req, res) => {
+  res.render('admin/index');
+});
+app.get('/admin/*', (req, res) => {
+  res.render('admin/index');
+});
+
+// Login
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
+// PDV
+app.get('/pdv', (req, res) => {
+  res.render('pdv/index');
+});
+app.get('/pdv/*', (req, res) => {
+  res.render('pdv/index');
+});
+
+// Store
+app.get('/', (req, res) => {
+  res.render('store/index');
+});
+app.get('/store/*', (req, res) => {
+  res.render('store/index');
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    error: 'Erro interno do servidor',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Rota não encontrada' });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 ModaControl Pro rodando na porta ${PORT}`);
+  console.log(`📱 Loja online: http://localhost:${PORT}/`);
+  console.log(`🔧 Painel admin: http://localhost:${PORT}/admin`);
+  console.log(`💰 PDV: http://localhost:${PORT}/pdv`);
+  console.log(`🔑 Login: admin@modacontrol.com.br / admin123`);
+  console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+});
+
+module.exports = app;

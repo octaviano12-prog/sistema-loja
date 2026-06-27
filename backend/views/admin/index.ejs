@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ModaControl Pro - Painel Administrativo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    .sidebar { width: 260px; transition: transform 0.3s; }
+    .sidebar.collapsed { transform: translateX(-260px); }
+    .main-content { margin-left: 260px; transition: margin-left 0.3s; }
+    .main-content.expanded { margin-left: 0; }
+    @media (max-width: 768px) { .sidebar { position: fixed; z-index: 50; height: 100vh; } .sidebar.collapsed { transform: translateX(-260px); } .main-content { margin-left: 0 !important; } }
+    .nav-item { transition: all 0.2s; }
+    .nav-item:hover, .nav-item.active { background: rgba(99,102,241,0.1); color: #6366f1; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .stat-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 20px; }
+    .btn-primary { background: #6366f1; color: white; padding: 8px 16px; border-radius: 8px; font-weight: 500; transition: background 0.2s; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-secondary { background: #f1f5f9; color: #475569; padding: 8px 16px; border-radius: 8px; font-weight: 500; }
+    .btn-danger { background: #ef4444; color: white; padding: 8px 16px; border-radius: 8px; font-weight: 500; }
+    .input-field { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; transition: border-color 0.2s; }
+    .input-field:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .table-container { overflow-x: auto; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .modal-content { background: white; border-radius: 16px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; padding: 24px; }
+    .badge { padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-inactive { background: #fee2e2; color: #991b1b; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-paid { background: #dcfce7; color: #166534; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #1f2937; color: white; padding: 12px 20px; border-radius: 8px; z-index: 200; animation: slideIn 0.3s; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div id="app">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 flex flex-col">
+      <div class="p-4 border-b border-gray-200">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+          <div>
+            <h1 class="font-bold text-gray-800 text-sm">ModaControl Pro</h1>
+            <p class="text-xs text-gray-500" id="companyName">Painel Admin</p>
+          </div>
+        </div>
+      </div>
+      <nav class="flex-1 overflow-y-auto p-3" id="sidebarNav">
+        <div class="mb-2"><p class="text-xs font-semibold text-gray-400 uppercase px-3 mb-1">Principal</p></div>
+        <a href="#" onclick="navigate('dashboard')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="dashboard">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          Dashboard
+        </a>
+        <div class="mb-2 mt-4"><p class="text-xs font-semibold text-gray-400 uppercase px-3 mb-1">Vendas</p></div>
+        <a href="#" onclick="navigate('orders')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="orders">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+          Pedidos
+        </a>
+        <a href="#" onclick="navigate('pdv')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="pdv">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          PDV / Caixa
+        </a>
+        <div class="mb-2 mt-4"><p class="text-xs font-semibold text-gray-400 uppercase px-3 mb-1">Catálogo</p></div>
+        <a href="#" onclick="navigate('products')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="products">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Produtos
+        </a>
+        <a href="#" onclick="navigate('categories')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="categories">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+          Categorias
+        </a>
+        <a href="#" onclick="navigate('stock')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="stock">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          Estoque
+        </a>
+        <div class="mb-2 mt-4"><p class="text-xs font-semibold text-gray-400 uppercase px-3 mb-1">Pessoas</p></div>
+        <a href="#" onclick="navigate('customers')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="customers">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Clientes
+        </a>
+        <a href="#" onclick="navigate('suppliers')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="suppliers">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
+          Fornecedores
+        </a>
+        <a href="#" onclick="navigate('sellers')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="sellers">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          Vendedores
+        </a>
+        <div class="mb-2 mt-4"><p class="text-xs font-semibold text-gray-400 uppercase px-3 mb-1">Financeiro</p></div>
+        <a href="#" onclick="navigate('financial')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="financial">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Financeiro
+        </a>
+        <a href="#" onclick="navigate('reports')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="reports">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Relatórios
+        </a>
+        <div class="mb-2 mt-4"><p class="text-xs font-semibold text-gray-400 uppercase px-3 mb-1">Fiscal</p></div>
+        <a href="#" onclick="navigate('invoices')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="invoices">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Notas Fiscais
+        </a>
+        <div class="mb-2 mt-4"><p class="text-xs font-semibold text-gray-400 uppercase px-3 mb-1">Marketing</p></div>
+        <a href="#" onclick="navigate('coupons')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="coupons">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+          Cupons
+        </a>
+        <div class="mb-2 mt-4"><p class="text-xs font-semibold text-gray-400 uppercase px-3 mb-1">Sistema</p></div>
+        <a href="#" onclick="navigate('settings')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="settings">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Configurações
+        </a>
+        <a href="#" onclick="navigate('users')" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700" data-page="users">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          Usuários
+        </a>
+      </nav>
+      <div class="p-3 border-t border-gray-200">
+        <a href="/" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Ver Loja Online
+        </a>
+        <button onclick="logout()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 w-full text-left">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Sair
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="main-content min-h-screen">
+      <!-- Top bar -->
+      <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+        <div class="flex items-center gap-3">
+          <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-gray-100 md:hidden">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <h2 class="text-lg font-semibold text-gray-800" id="pageTitle">Dashboard</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <button onclick="toggleNotifications()" class="p-2 rounded-lg hover:bg-gray-100 relative">
+              <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">0</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+              <span class="text-indigo-600 font-medium text-sm" id="userInitial">A</span>
+            </div>
+            <span class="text-sm text-gray-700 hidden sm:block" id="userName">Admin</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="p-4 md:p-6" id="pageContent">
+        <!-- Dynamic content loaded here -->
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toastContainer"></div>
+
+  <script>
+    // ===== CORE SYSTEM =====
+    const API = '';
+    let currentPage = 'dashboard';
+    let sidebarOpen = window.innerWidth > 768;
+
+    function getToken() { return localStorage.getItem('token'); }
+    function getUser() { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } }
+    function getCompany() { try { return JSON.parse(localStorage.getItem('company')); } catch { return null; } }
+
+    async function api(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
+      const res = await fetch(`${API}${path}`, { ...options, headers });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro');
+      return data;
+    }
+
+    function logout() { localStorage.clear(); window.location.href = '/login'; }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebarOpen = !sidebarOpen;
+      if (sidebarOpen) sidebar.classList.remove('collapsed');
+      else sidebar.classList.add('collapsed');
+    }
+
+    function toast(message, type = 'success') {
+      const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
+      const el = document.createElement('div');
+      el.className = `toast ${colors[type] || 'bg-gray-800'}`;
+      el.textContent = message;
+      document.getElementById('toastContainer').appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function formatCurrency(value) { return `R$ ${parseFloat(value || 0).toFixed(2).replace('.', ',')}`; }
+    function formatDate(date) { return date ? new Date(date).toLocaleDateString('pt-BR') : '-'; }
+    function statusBadge(status) {
+      const map = { active: 'status-active', inactive: 'status-inactive', pending: 'status-pending', paid: 'status-paid', new: 'bg-blue-100 text-blue-700', open: 'bg-green-100 text-green-700', closed: 'bg-gray-100 text-gray-700', authorized: 'status-paid', rejected: 'status-inactive', cancelled: 'bg-red-100 text-red-700', processing: 'bg-yellow-100 text-yellow-700' };
+      const labels = { active: 'Ativo', inactive: 'Inativo', pending: 'Pendente', paid: 'Pago', new: 'Novo', open: 'Aberto', closed: 'Fechado', authorized: 'Autorizada', rejected: 'Rejeitada', cancelled: 'Cancelado', processing: 'Processando', partial: 'Parcial' };
+      return `<span class="badge ${map[status] || 'bg-gray-100 text-gray-700'}">${labels[status] || status}</span>`;
+    }
+
+    // ===== NAVIGATION =====
+    function navigate(page) {
+      currentPage = page;
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const navItem = document.querySelector(`[data-page="${page}"]`);
+      if (navItem) navItem.classList.add('active');
+      const titles = { dashboard: 'Dashboard', products: 'Produtos', categories: 'Categorias', customers: 'Clientes', orders: 'Pedidos', stock: 'Estoque', pdv: 'PDV / Caixa', suppliers: 'Fornecedores', sellers: 'Vendedores', financial: 'Financeiro', reports: 'Relatórios', invoices: 'Notas Fiscais', coupons: 'Cupons', settings: 'Configurações', users: 'Usuários' };
+      document.getElementById('pageTitle').textContent = titles[page] || page;
+      loadPage(page);
+      if (window.innerWidth <= 768) toggleSidebar();
+    }
+
+    async function loadPage(page) {
+      const content = document.getElementById('pageContent');
+      content.innerHTML = '<div class="flex items-center justify-center h-64"><div class="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full"></div></div>';
+      try {
+        switch(page) {
+          case 'dashboard': await renderDashboard(); break;
+          case 'products': await renderProducts(); break;
+          case 'categories': await renderCategories(); break;
+          case 'customers': await renderCustomers(); break;
+          case 'orders': await renderOrders(); break;
+          case 'stock': await renderStock(); break;
+          case 'suppliers': await renderSuppliers(); break;
+          case 'sellers': await renderSellers(); break;
+          case 'financial': await renderFinancial(); break;
+          case 'reports': await renderReports(); break;
+          case 'invoices': await renderInvoices(); break;
+          case 'coupons': await renderCoupons(); break;
+          case 'settings': await renderSettings(); break;
+          case 'users': await renderUsers(); break;
+          case 'pdv': window.open('/pdv', '_blank'); break;
+          default: content.innerHTML = '<p>Página não encontrada</p>';
+        }
+      } catch(err) { content.innerHTML = `<p class="text-red-600">${err.message}</p>`; }
+    }
+
+    // ===== DASHBOARD =====
+    async function renderDashboard() {
+      const d = await api('/api/dashboard');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500">Faturamento Hoje</p><p class="text-2xl font-bold text-gray-800">${formatCurrency(d.today_revenue)}</p></div><div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg></div></div></div>
+          <div class="stat-card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500">Faturamento Mês</p><p class="text-2xl font-bold text-gray-800">${formatCurrency(d.month_revenue)}</p></div><div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z"/></svg></div></div></div>
+          <div class="stat-card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500">Pedidos Hoje</p><p class="text-2xl font-bold text-gray-800">${d.today_orders}</p></div><div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg></div></div></div>
+          <div class="stat-card"><div class="flex items-center justify-between"><div><p class="text-sm text-gray-500">Pendentes</p><p class="text-2xl font-bold text-gray-800">${d.pending_orders}</p></div><div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center"><svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div></div></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card"><p class="text-sm text-gray-500">Vendas Online Hoje</p><p class="text-xl font-bold">${formatCurrency(d.online_sales)}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">Vendas PDV Hoje</p><p class="text-xl font-bold">${formatCurrency(d.pdv_sales)}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">Contas a Pagar</p><p class="text-xl font-bold text-red-600">${formatCurrency(d.accounts_payable)}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">Contas a Receber</p><p class="text-xl font-bold text-green-600">${formatCurrency(d.accounts_receivable)}</p></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card"><p class="text-sm text-gray-500">Lucro Estimado (Mês)</p><p class="text-xl font-bold text-green-600">${formatCurrency(d.estimated_profit)}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">Clientes Novos (Mês)</p><p class="text-xl font-bold">${d.new_customers}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">NFs Emitidas</p><p class="text-xl font-bold">${d.invoices_issued}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">Caixa</p><p class="text-xl font-bold ${d.cash_register_open ? 'text-green-600' : 'text-red-600'}">${d.cash_register_open ? 'Aberto' : 'Fechado'}</p></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card p-4"><h3 class="font-semibold text-gray-800 mb-3">Vendas - Últimos 7 dias</h3><canvas id="salesChart" height="200"></canvas></div>
+          <div class="card p-4"><h3 class="font-semibold text-gray-800 mb-3">Produtos Mais Vendidos</h3><div class="space-y-2">${d.top_products.map(p => `<div class="flex justify-between items-center py-2 border-b border-gray-100"><span class="text-sm">${p.name}</span><span class="text-sm font-medium">${formatCurrency(p.revenue)}</span></div>`).join('') || '<p class="text-gray-400 text-sm">Nenhuma venda ainda</p>'}</div></div>
+          <div class="card p-4"><h3 class="font-semibold text-gray-800 mb-3">Estoque Baixo</h3><div class="space-y-2">${d.low_stock.map(p => `<div class="flex justify-between items-center py-2 border-b border-gray-100"><span class="text-sm">${p.name}</span><span class="text-sm font-medium text-red-600">${p.stock} un.</span></div>`).join('') || '<p class="text-gray-400 text-sm">Estoque OK</p>'}</div></div>
+          <div class="card p-4"><h3 class="font-semibold text-gray-800 mb-3">Vendas por Categoria</h3><canvas id="categoryChart" height="200"></canvas></div>
+        </div>`;
+      // Sales chart
+      if (d.sales_chart.length > 0) {
+        new Chart(document.getElementById('salesChart'), { type: 'bar', data: { labels: d.sales_chart.map(s => new Date(s.date).toLocaleDateString('pt-BR')), datasets: [{ label: 'Faturamento', data: d.sales_chart.map(s => s.revenue), backgroundColor: '#6366f1', borderRadius: 6 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+      }
+      // Category chart
+      if (d.sales_by_category.length > 0) {
+        new Chart(document.getElementById('categoryChart'), { type: 'doughnut', data: { labels: d.sales_by_category.map(c => c.name || 'Sem categoria'), datasets: [{ data: d.sales_by_category.map(c => c.revenue), backgroundColor: ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#06b6d4','#f97316','#64748b'] }] }, options: { responsive: true } });
+      }
+    }
+
+    // ===== PRODUCTS =====
+    async function renderProducts() {
+      const data = await api('/api/products?page=1&limit=50');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <div class="flex gap-2 w-full sm:w-auto">
+            <input type="text" id="productSearch" placeholder="Buscar produto..." class="input-field flex-1" onkeyup="searchProducts()">
+          </div>
+          <button onclick="openProductModal()" class="btn-primary whitespace-nowrap">+ Novo Produto</button>
+        </div>
+        <div class="card overflow-hidden">
+          <div class="table-container">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 border-b"><tr><th class="text-left p-3 font-medium text-gray-600">Produto</th><th class="text-left p-3 font-medium text-gray-600 hidden md:table-cell">Categoria</th><th class="text-right p-3 font-medium text-gray-600">Preço</th><th class="text-right p-3 font-medium text-gray-600 hidden sm:table-cell">Estoque</th><th class="text-center p-3 font-medium text-gray-600">Status</th><th class="text-center p-3 font-medium text-gray-600">Ações</th></tr></thead>
+              <tbody id="productsTable">${data.products.map(p => `<tr class="border-b hover:bg-gray-50"><td class="p-3"><div class="font-medium text-gray-800">${p.name}</div><div class="text-xs text-gray-500">${p.sku || '-'}</div></td><td class="p-3 text-gray-600 hidden md:table-cell">${p.category_name || '-'}</td><td class="p-3 text-right font-medium">${formatCurrency(p.price)}</td><td class="p-3 text-right hidden sm:table-cell">${p.total_stock}</td><td class="p-3 text-center">${statusBadge(p.status)}</td><td class="p-3 text-center"><button onclick="openProductModal(${p.id})" class="text-indigo-600 hover:text-indigo-800 text-xs mr-2">Editar</button><button onclick="deleteProduct(${p.id})" class="text-red-600 hover:text-red-800 text-xs">Excluir</button></td></tr>`).join('')}</tbody>
+            </table>
+          </div>
+          <div class="p-3 text-sm text-gray-500">Total: ${data.total} produtos</div>
+        </div>
+        <div id="productModal"></div>`;
+    }
+
+    function searchProducts() {
+      const search = document.getElementById('productSearch').value;
+      api(`/api/products?search=${encodeURIComponent(search)}&limit=50`).then(data => {
+        document.getElementById('productsTable').innerHTML = data.products.map(p => `<tr class="border-b hover:bg-gray-50"><td class="p-3"><div class="font-medium text-gray-800">${p.name}</div><div class="text-xs text-gray-500">${p.sku || '-'}</div></td><td class="p-3 text-gray-600 hidden md:table-cell">${p.category_name || '-'}</td><td class="p-3 text-right font-medium">${formatCurrency(p.price)}</td><td class="p-3 text-right hidden sm:table-cell">${p.total_stock}</td><td class="p-3 text-center">${statusBadge(p.status)}</td><td class="p-3 text-center"><button onclick="openProductModal(${p.id})" class="text-indigo-600 hover:text-indigo-800 text-xs mr-2">Editar</button><button onclick="deleteProduct(${p.id})" class="text-red-600 hover:text-red-800 text-xs">Excluir</button></td></tr>`).join('');
+      });
+    }
+
+    async function openProductModal(id) {
+      const categories = await api('/api/categories');
+      const brands = await api('/api/categories/brands');
+      let product = { name: '', price: '', cost_price: '', status: 'active', category_id: '', brand_id: '', description: '', sku: '', barcode: '', ncm: '', variants: [] };
+      if (id) { try { product = await api(`/api/products/${id}`); } catch {} }
+      document.getElementById('productModal').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
+          <div class="modal-content">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">${id ? 'Editar' : 'Novo'} Produto</h3><button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-gray-600">&times;</button></div>
+            <form id="productForm" onsubmit="saveProduct(event, ${id || 'null'})">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-700">Nome *</label><input name="name" value="${product.name || ''}" class="input-field mt-1" required></div>
+                <div><label class="text-sm font-medium text-gray-700">Categoria</label><select name="category_id" class="input-field mt-1"><option value="">Selecione</option>${categories.map(c => `<option value="${c.id}" ${product.category_id == c.id ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
+                <div><label class="text-sm font-medium text-gray-700">Marca</label><select name="brand_id" class="input-field mt-1"><option value="">Selecione</option>${brands.map(b => `<option value="${b.id}" ${product.brand_id == b.id ? 'selected' : ''}>${b.name}</option>`).join('')}</select></div>
+                <div><label class="text-sm font-medium text-gray-700">SKU</label><input name="sku" value="${product.sku || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">Código de Barras</label><input name="barcode" value="${product.barcode || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">Custo</label><input name="cost_price" type="number" step="0.01" value="${product.cost_price || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">Preço Venda *</label><input name="price" type="number" step="0.01" value="${product.price || ''}" class="input-field mt-1" required></div>
+                <div><label class="text-sm font-medium text-gray-700">Preço Promocional</label><input name="promotional_price" type="number" step="0.01" value="${product.promotional_price || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">NCM</label><input name="ncm" value="${product.ncm || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">Peso (kg)</label><input name="weight" type="number" step="0.01" value="${product.weight || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">Gênero</label><select name="gender" class="input-field mt-1"><option value="">Selecione</option><option value="feminino" ${product.gender === 'feminino' ? 'selected' : ''}>Feminino</option><option value="masculino" ${product.gender === 'masculino' ? 'selected' : ''}>Masculino</option><option value="infantil" ${product.gender === 'infantil' ? 'selected' : ''}>Infantil</option><option value="unissex" ${product.gender === 'unissex' ? 'selected' : ''}>Unissex</option></select></div>
+                <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-700">Descrição</label><textarea name="description" class="input-field mt-1" rows="3">${product.description || ''}</textarea></div>
+                <div class="flex gap-4 items-center"><label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_featured" ${product.is_featured ? 'checked' : ''}> Destaque</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_promotional" ${product.is_promotional ? 'checked' : ''}> Promoção</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_new" ${product.is_new ? 'checked' : ''}> Novo</label></div>
+                <div><label class="text-sm font-medium text-gray-700">Status</label><select name="status" class="input-field mt-1"><option value="active" ${product.status === 'active' ? 'selected' : ''}>Ativo</option><option value="inactive" ${product.status === 'inactive' ? 'selected' : ''}>Inativo</option><option value="draft" ${product.status === 'draft' ? 'selected' : ''}>Rascunho</option></select></div>
+              </div>
+              <div class="flex justify-end gap-2 mt-4">
+                <button type="button" onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">Cancelar</button>
+                <button type="submit" class="btn-primary">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>`;
+    }
+
+    async function saveProduct(e, id) {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form));
+      data.is_featured = form.is_featured.checked ? 1 : 0;
+      data.is_promotional = form.is_promotional.checked ? 1 : 0;
+      data.is_new = form.is_new.checked ? 1 : 0;
+      try {
+        if (id) { await api(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }); }
+        else { await api('/api/products', { method: 'POST', body: JSON.stringify(data) }); }
+        toast('Produto salvo com sucesso!');
+        document.querySelector('.modal-overlay').remove();
+        renderProducts();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Excluir este produto?')) return;
+      try { await api(`/api/products/${id}`, { method: 'DELETE' }); toast('Produto excluído'); renderProducts(); } catch (err) { toast(err.message, 'error'); }
+    }
+
+    // ===== CATEGORIES =====
+    async function renderCategories() {
+      const categories = await api('/api/categories');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="flex justify-between items-center mb-4"><h3></h3><button onclick="openCategoryModal()" class="btn-primary">+ Nova Categoria</button></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${categories.map(c => `<div class="card p-4 flex justify-between items-center"><div><h4 class="font-medium">${c.name}</h4><p class="text-sm text-gray-500">${c.products_count || 0} produtos</p></div><div class="flex gap-2"><button onclick="openCategoryModal(${c.id}, '${c.name}')" class="text-indigo-600 text-sm">Editar</button><button onclick="deleteCategory(${c.id})" class="text-red-600 text-sm">Excluir</button></div></div>`).join('')}
+        </div>
+        <div id="categoryModal"></div>`;
+    }
+
+    function openCategoryModal(id, name) {
+      document.getElementById('categoryModal').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
+          <div class="modal-content"><h3 class="text-lg font-semibold mb-4">${id ? 'Editar' : 'Nova'} Categoria</h3>
+            <form onsubmit="saveCategory(event, ${id || 'null'})">
+              <label class="text-sm font-medium text-gray-700">Nome</label>
+              <input name="name" value="${name || ''}" class="input-field mt-1 mb-4" required>
+              <div class="flex justify-end gap-2"><button type="button" onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Salvar</button></div>
+            </form>
+          </div>
+        </div>`;
+    }
+
+    async function saveCategory(e, id) {
+      e.preventDefault();
+      const name = e.target.name.value;
+      try {
+        if (id) { await api(`/api/categories/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }); }
+        else { await api('/api/categories', { method: 'POST', body: JSON.stringify({ name }) }); }
+        toast('Categoria salva'); document.querySelector('.modal-overlay').remove(); renderCategories();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function deleteCategory(id) { if (!confirm('Excluir?')) return; try { await api(`/api/categories/${id}`, { method: 'DELETE' }); toast('Excluída'); renderCategories(); } catch (err) { toast(err.message, 'error'); } }
+
+    // ===== CUSTOMERS =====
+    async function renderCustomers() {
+      const data = await api('/api/customers');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <input type="text" id="customerSearch" placeholder="Buscar cliente..." class="input-field flex-1" onkeyup="searchCustomers()">
+          <button onclick="openCustomerModal()" class="btn-primary whitespace-nowrap">+ Novo Cliente</button>
+        </div>
+        <div class="card overflow-hidden">
+          <div class="table-container">
+            <table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left p-3 font-medium text-gray-600">Nome</th><th class="text-left p-3 font-medium text-gray-600 hidden md:table-cell">Telefone</th><th class="text-left p-3 font-medium text-gray-600 hidden lg:table-cell">Email</th><th class="text-right p-3 font-medium text-gray-600 hidden sm:table-cell">Total Gasto</th><th class="text-center p-3 font-medium text-gray-600">Ações</th></tr></thead>
+            <tbody id="customersTable">${data.customers.map(c => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium">${c.name}</td><td class="p-3 text-gray-600 hidden md:table-cell">${c.phone || '-'}</td><td class="p-3 text-gray-600 hidden lg:table-cell">${c.email || '-'}</td><td class="p-3 text-right hidden sm:table-cell">${formatCurrency(c.total_spent)}</td><td class="p-3 text-center"><button onclick="openCustomerModal(${c.id})" class="text-indigo-600 text-xs mr-2">Editar</button><button onclick="deleteCustomer(${c.id})" class="text-red-600 text-xs">Excluir</button></td></tr>`).join('')}</tbody></table>
+          </div>
+          <div class="p-3 text-sm text-gray-500">Total: ${data.total} clientes</div>
+        </div>
+        <div id="customerModal"></div>`;
+    }
+
+    function searchCustomers() {
+      const search = document.getElementById('customerSearch').value;
+      api(`/api/customers?search=${encodeURIComponent(search)}&limit=50`).then(data => {
+        document.getElementById('customersTable').innerHTML = data.customers.map(c => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium">${c.name}</td><td class="p-3 text-gray-600 hidden md:table-cell">${c.phone || '-'}</td><td class="p-3 text-gray-600 hidden lg:table-cell">${c.email || '-'}</td><td class="p-3 text-right hidden sm:table-cell">${formatCurrency(c.total_spent)}</td><td class="p-3 text-center"><button onclick="openCustomerModal(${c.id})" class="text-indigo-600 text-xs mr-2">Editar</button><button onclick="deleteCustomer(${c.id})" class="text-red-600 text-xs">Excluir</button></td></tr>`).join('');
+      });
+    }
+
+    async function openCustomerModal(id) {
+      let customer = { name: '', email: '', phone: '', cpf_cnpj: '', address: '', city: '', state: '', zip_code: '' };
+      if (id) { try { customer = await api(`/api/customers/${id}`); } catch {} }
+      document.getElementById('customerModal').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
+          <div class="modal-content">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">${id ? 'Editar' : 'Novo'} Cliente</h3><button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-gray-600">&times;</button></div>
+            <form onsubmit="saveCustomer(event, ${id || 'null'})">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-700">Nome *</label><input name="name" value="${customer.name}" class="input-field mt-1" required></div>
+                <div><label class="text-sm font-medium text-gray-700">Email</label><input name="email" type="email" value="${customer.email || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">Telefone</label><input name="phone" value="${customer.phone || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">CPF/CNPJ</label><input name="cpf_cnpj" value="${customer.cpf_cnpj || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">CEP</label><input name="zip_code" value="${customer.zip_code || ''}" class="input-field mt-1"></div>
+                <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-700">Endereço</label><input name="address" value="${customer.address || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">Cidade</label><input name="city" value="${customer.city || ''}" class="input-field mt-1"></div>
+                <div><label class="text-sm font-medium text-gray-700">Estado</label><input name="state" value="${customer.state || ''}" class="input-field mt-1"></div>
+              </div>
+              <div class="flex justify-end gap-2 mt-4"><button type="button" onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Salvar</button></div>
+            </form>
+          </div>
+        </div>`;
+    }
+
+    async function saveCustomer(e, id) {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      try {
+        if (id) { await api(`/api/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }); }
+        else { await api('/api/customers', { method: 'POST', body: JSON.stringify(data) }); }
+        toast('Cliente salvo'); document.querySelector('.modal-overlay').remove(); renderCustomers();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function deleteCustomer(id) { if (!confirm('Excluir?')) return; try { await api(`/api/customers/${id}`, { method: 'DELETE' }); toast('Excluído'); renderCustomers(); } catch (err) { toast(err.message, 'error'); } }
+
+    // ===== ORDERS =====
+    async function renderOrders() {
+      const data = await api('/api/orders?limit=50');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="filterOrders('')" class="btn-secondary text-xs">Todos</button>
+            <button onclick="filterOrders('new')" class="btn-secondary text-xs">Novos</button>
+            <button onclick="filterOrders('pending_payment')" class="btn-secondary text-xs">Pendentes</button>
+            <button onclick="filterOrders('paid')" class="btn-secondary text-xs">Pagos</button>
+            <button onclick="filterOrders('shipped')" class="btn-secondary text-xs">Enviados</button>
+          </div>
+        </div>
+        <div class="card overflow-hidden">
+          <div class="table-container">
+            <table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left p-3 font-medium text-gray-600">Pedido</th><th class="text-left p-3 font-medium text-gray-600 hidden sm:table-cell">Cliente</th><th class="text-right p-3 font-medium text-gray-600">Total</th><th class="text-center p-3 font-medium text-gray-600 hidden md:table-cell">Pagamento</th><th class="text-center p-3 font-medium text-gray-600">Status</th><th class="text-center p-3 font-medium text-gray-600">Ações</th></tr></thead>
+            <tbody id="ordersTable">${data.orders.map(o => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium">${o.order_number}<div class="text-xs text-gray-500">${formatDate(o.created_at)}</div></td><td class="p-3 text-gray-600 hidden sm:table-cell">${o.customer_name || 'Visitante'}</td><td class="p-3 text-right font-medium">${formatCurrency(o.total)}</td><td class="p-3 text-center hidden md:table-cell">${statusBadge(o.payment_status)}</td><td class="p-3 text-center">${statusBadge(o.status)}</td><td class="p-3 text-center"><button onclick="viewOrder(${o.id})" class="text-indigo-600 text-xs">Ver</button></td></tr>`).join('')}</tbody></table>
+          </div>
+          <div class="p-3 text-sm text-gray-500">Total: ${data.total} pedidos</div>
+        </div>
+        <div id="orderModal"></div>`;
+    }
+
+    function filterOrders(status) {
+      api(`/api/orders?status=${status}&limit=50`).then(data => {
+        document.getElementById('ordersTable').innerHTML = data.orders.map(o => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium">${o.order_number}<div class="text-xs text-gray-500">${formatDate(o.created_at)}</div></td><td class="p-3 text-gray-600 hidden sm:table-cell">${o.customer_name || 'Visitante'}</td><td class="p-3 text-right font-medium">${formatCurrency(o.total)}</td><td class="p-3 text-center hidden md:table-cell">${statusBadge(o.payment_status)}</td><td class="p-3 text-center">${statusBadge(o.status)}</td><td class="p-3 text-center"><button onclick="viewOrder(${o.id})" class="text-indigo-600 text-xs">Ver</button></td></tr>`).join('');
+      });
+    }
+
+    async function viewOrder(id) {
+      const order = await api(`/api/orders/${id}`);
+      document.getElementById('orderModal').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
+          <div class="modal-content">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">Pedido ${order.order_number}</h3><button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-gray-600">&times;</button></div>
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div><span class="text-gray-500">Cliente:</span> <strong>${order.customer_name || 'Visitante'}</strong></div>
+                <div><span class="text-gray-500">Data:</span> ${formatDate(order.created_at)}</div>
+                <div><span class="text-gray-500">Total:</span> <strong>${formatCurrency(order.total)}</strong></div>
+                <div><span class="text-gray-500">Status:</span> ${statusBadge(order.status)}</div>
+                <div><span class="text-gray-500">Pagamento:</span> ${order.payment_method || '-'} (${statusBadge(order.payment_status)})</div>
+                <div><span class="text-gray-500">Vendedor:</span> ${order.seller_name || '-'}</div>
+              </div>
+              <h4 class="font-medium text-sm mt-4">Itens do Pedido</h4>
+              <div class="border rounded-lg overflow-hidden">
+                <table class="w-full text-sm"><thead class="bg-gray-50"><tr><th class="text-left p-2">Produto</th><th class="text-center p-2">Qtd</th><th class="text-right p-2">Preço</th></tr></thead>
+                <tbody>${order.items.map(i => `<tr class="border-t"><td class="p-2">${i.name}${i.size ? ` - Tam: ${i.size}` : ''}${i.color ? ` - Cor: ${i.color}` : ''}</td><td class="p-2 text-center">${i.quantity}</td><td class="p-2 text-right">${formatCurrency(i.total)}</td></tr>`).join('')}</tbody></table>
+              </div>
+              <div class="flex gap-2 mt-4">
+                <select onchange="updateOrderStatus(${order.id}, this.value)" class="input-field flex-1">
+                  <option value="new" ${order.status === 'new' ? 'selected' : ''}>Novo</option>
+                  <option value="pending_payment" ${order.status === 'pending_payment' ? 'selected' : ''}>Aguardando Pagamento</option>
+                  <option value="paid" ${order.status === 'paid' ? 'selected' : ''}>Pago</option>
+                  <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Em Separação</option>
+                  <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Enviado</option>
+                  <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Entregue</option>
+                  <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    async function updateOrderStatus(id, status) {
+      try { await api(`/api/orders/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }); toast('Status atualizado'); } catch (err) { toast(err.message, 'error'); }
+    }
+
+    // ===== STOCK =====
+    async function renderStock() {
+      const products = await api('/api/stock/report');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="flex gap-2 mb-4 flex-wrap">
+          <button onclick="filterStock('')" class="btn-secondary text-xs">Todos</button>
+          <button onclick="filterStock('low_stock')" class="btn-secondary text-xs">Estoque Baixo</button>
+          <button onclick="filterStock('no_stock')" class="btn-secondary text-xs">Sem Estoque</button>
+        </div>
+        <div class="card overflow-hidden">
+          <div class="table-container">
+            <table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left p-3 font-medium text-gray-600">Produto</th><th class="text-left p-3 font-medium text-gray-600 hidden md:table-cell">Categoria</th><th class="text-right p-3 font-medium text-gray-600">Preço</th><th class="text-right p-3 font-medium text-gray-600">Estoque</th><th class="text-center p-3 font-medium text-gray-600">Status</th></tr></thead>
+            <tbody id="stockTable">${products.map(p => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium">${p.name}</td><td class="p-3 text-gray-600 hidden md:table-cell">${p.category_name || '-'}</td><td class="p-3 text-right">${formatCurrency(p.price)}</td><td class="p-3 text-right font-medium ${p.total_stock <= 5 ? 'text-red-600' : ''}">${p.total_stock}</td><td class="p-3 text-center">${p.total_stock === 0 ? '<span class="badge status-inactive">Sem estoque</span>' : p.total_stock <= 5 ? '<span class="badge status-pending">Baixo</span>' : '<span class="badge status-active">OK</span>'}</td></tr>`).join('')}</tbody></table>
+          </div>
+        </div>`;
+    }
+
+    function filterStock(filter) {
+      api(`/api/stock/report?filter=${filter}`).then(products => {
+        document.getElementById('stockTable').innerHTML = products.map(p => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium">${p.name}</td><td class="p-3 text-gray-600 hidden md:table-cell">${p.category_name || '-'}</td><td class="p-3 text-right">${formatCurrency(p.price)}</td><td class="p-3 text-right font-medium ${p.total_stock <= 5 ? 'text-red-600' : ''}">${p.total_stock}</td><td class="p-3 text-center">${p.total_stock === 0 ? '<span class="badge status-inactive">Sem estoque</span>' : p.total_stock <= 5 ? '<span class="badge status-pending">Baixo</span>' : '<span class="badge status-active">OK</span>'}</td></tr>`).join('');
+      });
+    }
+
+    // ===== SUPPLIERS =====
+    async function renderSuppliers() {
+      const suppliers = await api('/api/suppliers');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="flex justify-between items-center mb-4"><div></div><button onclick="openSupplierModal()" class="btn-primary">+ Novo Fornecedor</button></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${suppliers.map(s => `<div class="card p-4"><h4 class="font-medium">${s.name}</h4><p class="text-sm text-gray-500">${s.cnpj || '-'}</p><p class="text-sm text-gray-500">${s.phone || '-'}</p><div class="mt-2 flex gap-2"><button onclick="openSupplierModal(${s.id})" class="text-indigo-600 text-xs">Editar</button></div></div>`).join('') || '<p class="text-gray-400">Nenhum fornecedor cadastrado</p>'}</div>
+        <div id="supplierModal"></div>`;
+    }
+
+    async function openSupplierModal(id) {
+      let supplier = { name: '', cnpj: '', phone: '', email: '', address: '', city: '', state: '' };
+      if (id) { const suppliers = await api('/api/suppliers'); supplier = suppliers.find(s => s.id == id) || supplier; }
+      document.getElementById('supplierModal').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()"><div class="modal-content">
+          <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">${id ? 'Editar' : 'Novo'} Fornecedor</h3><button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-gray-600">&times;</button></div>
+          <form onsubmit="saveSupplier(event, ${id || 'null'})">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-700">Nome *</label><input name="name" value="${supplier.name}" class="input-field mt-1" required></div>
+              <div><label class="text-sm font-medium text-gray-700">CNPJ</label><input name="cnpj" value="${supplier.cnpj || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Telefone</label><input name="phone" value="${supplier.phone || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Email</label><input name="email" value="${supplier.email || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Cidade</label><input name="city" value="${supplier.city || ''}" class="input-field mt-1"></div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4"><button type="button" onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Salvar</button></div>
+          </form>
+        </div></div>`;
+    }
+
+    async function saveSupplier(e, id) {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      try {
+        if (id) { await api(`/api/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(data) }); }
+        else { await api('/api/suppliers', { method: 'POST', body: JSON.stringify(data) }); }
+        toast('Fornecedor salvo'); document.querySelector('.modal-overlay').remove(); renderSuppliers();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    // ===== SELLERS =====
+    async function renderSellers() {
+      const sellers = await api('/api/sellers');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="flex justify-between items-center mb-4"><div></div><button onclick="openSellerModal()" class="btn-primary">+ Novo Vendedor</button></div>
+        <div class="card overflow-hidden">
+          <div class="table-container">
+            <table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left p-3 font-medium text-gray-600">Nome</th><th class="text-left p-3 font-medium text-gray-600 hidden sm:table-cell">Telefone</th><th class="text-right p-3 font-medium text-gray-600">Comissão</th><th class="text-right p-3 font-medium text-gray-600 hidden md:table-cell">Total Vendas</th><th class="text-center p-3 font-medium text-gray-600">Ações</th></tr></thead>
+            <tbody>${sellers.map(s => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium">${s.name}</td><td class="p-3 text-gray-600 hidden sm:table-cell">${s.phone || '-'}</td><td class="p-3 text-right">${s.commission_rate}%</td><td class="p-3 text-right hidden md:table-cell">${formatCurrency(s.total_sales)}</td><td class="p-3 text-center"><button onclick="openSellerModal(${s.id})" class="text-indigo-600 text-xs mr-2">Editar</button><button onclick="deleteSeller(${s.id})" class="text-red-600 text-xs">Excluir</button></td></tr>`).join('')}</tbody></table>
+          </div>
+        </div>
+        <div id="sellerModal"></div>`;
+    }
+
+    async function openSellerModal(id) {
+      let seller = { name: '', phone: '', email: '', commission_rate: 5, cpf: '' };
+      if (id) { const sellers = await api('/api/sellers'); seller = sellers.find(s => s.id == id) || seller; }
+      document.getElementById('sellerModal').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()"><div class="modal-content">
+          <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">${id ? 'Editar' : 'Novo'} Vendedor</h3><button onclick="this.closest('.modal-overlay').remove()" class="text-gray-400 hover:text-gray-600">&times;</button></div>
+          <form onsubmit="saveSeller(event, ${id || 'null'})">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-700">Nome *</label><input name="name" value="${seller.name}" class="input-field mt-1" required></div>
+              <div><label class="text-sm font-medium text-gray-700">CPF</label><input name="cpf" value="${seller.cpf || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Telefone</label><input name="phone" value="${seller.phone || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Email</label><input name="email" value="${seller.email || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Comissão (%)</label><input name="commission_rate" type="number" step="0.1" value="${seller.commission_rate || 5}" class="input-field mt-1"></div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4"><button type="button" onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Salvar</button></div>
+          </form>
+        </div></div>`;
+    }
+
+    async function saveSeller(e, id) {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      try {
+        if (id) { await api(`/api/sellers/${id}`, { method: 'PUT', body: JSON.stringify(data) }); }
+        else { await api('/api/sellers', { method: 'POST', body: JSON.stringify(data) }); }
+        toast('Vendedor salvo'); document.querySelector('.modal-overlay').remove(); renderSellers();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function deleteSeller(id) { if (!confirm('Excluir?')) return; try { await api(`/api/sellers/${id}`, { method: 'DELETE' }); toast('Excluído'); renderSellers(); } catch (err) { toast(err.message, 'error'); } }
+
+    // ===== FINANCIAL =====
+    async function renderFinancial() {
+      const payable = await api('/api/financial/payable');
+      const receivable = await api('/api/financial/receivable');
+      const cashflow = await api('/api/financial/cashflow');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div class="stat-card"><p class="text-sm text-gray-500">Receitas (Mês)</p><p class="text-xl font-bold text-green-600">${formatCurrency(cashflow.total_revenue)}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">Despesas (Mês)</p><p class="text-xl font-bold text-red-600">${formatCurrency(cashflow.total_expense)}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">Saldo</p><p class="text-xl font-bold ${cashflow.balance >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(cashflow.balance)}</p></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card p-4">
+            <div class="flex justify-between items-center mb-3"><h3 class="font-semibold">Contas a Pagar</h3><button onclick="openPayableModal()" class="text-sm text-indigo-600">+ Nova</button></div>
+            <div class="space-y-2">${payable.items.map(p => `<div class="flex justify-between items-center py-2 border-b text-sm"><div><div class="font-medium">${p.description}</div><div class="text-xs text-gray-500">Venc: ${formatDate(p.due_date)}</div></div><div class="text-right"><div class="font-medium">${formatCurrency(p.amount)}</div>${statusBadge(p.status)}</div></div>`).join('') || '<p class="text-gray-400 text-sm">Nenhuma conta</p>'}</div>
+          </div>
+          <div class="card p-4">
+            <div class="flex justify-between items-center mb-3"><h3 class="font-semibold">Contas a Receber</h3></div>
+            <div class="space-y-2">${receivable.items.map(r => `<div class="flex justify-between items-center py-2 border-b text-sm"><div><div class="font-medium">${r.description}</div><div class="text-xs text-gray-500">Venc: ${formatDate(r.due_date)}</div></div><div class="text-right"><div class="font-medium">${formatCurrency(r.amount)}</div>${statusBadge(r.status)}</div></div>`).join('') || '<p class="text-gray-400 text-sm">Nenhuma conta</p>'}</div>
+          </div>
+        </div>
+        <div id="financialModal"></div>`;
+    }
+
+    function openPayableModal() {
+      document.getElementById('financialModal').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()"><div class="modal-content">
+          <h3 class="text-lg font-semibold mb-4">Nova Conta a Pagar</h3>
+          <form onsubmit="savePayable(event)">
+            <div class="space-y-3">
+              <div><label class="text-sm font-medium text-gray-700">Descrição *</label><input name="description" class="input-field mt-1" required></div>
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="text-sm font-medium text-gray-700">Valor *</label><input name="amount" type="number" step="0.01" class="input-field mt-1" required></div>
+                <div><label class="text-sm font-medium text-gray-700">Vencimento *</label><input name="due_date" type="date" class="input-field mt-1" required></div>
+              </div>
+              <div><label class="text-sm font-medium text-gray-700">Categoria</label><input name="category" class="input-field mt-1"></div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4"><button type="button" onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Salvar</button></div>
+          </form>
+        </div></div>`;
+    }
+
+    async function savePayable(e) {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      try { await api('/api/financial/payable', { method: 'POST', body: JSON.stringify(data) }); toast('Conta criada'); document.querySelector('.modal-overlay').remove(); renderFinancial(); } catch (err) { toast(err.message, 'error'); }
+    }
+
+    // ===== REPORTS =====
+    async function renderReports() {
+      const sales = await api('/api/reports/sales');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div class="stat-card"><p class="text-sm text-gray-500">Receita Total (30 dias)</p><p class="text-xl font-bold">${formatCurrency(sales.total_revenue)}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">Total de Pedidos</p><p class="text-xl font-bold">${sales.total_orders}</p></div>
+          <div class="stat-card"><p class="text-sm text-gray-500">Ticket Médio</p><p class="text-xl font-bold">${formatCurrency(sales.avg_ticket)}</p></div>
+        </div>
+        <div class="card p-4 mb-6"><h3 class="font-semibold mb-3">Vendas por Dia</h3><canvas id="reportChart" height="200"></canvas></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card p-4"><h3 class="font-semibold mb-3">Relatórios Disponíveis</h3>
+            <div class="space-y-2">
+              <button onclick="loadReport('products')" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 border text-sm">Vendas por Produto</button>
+              <button onclick="loadReport('categories')" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 border text-sm">Vendas por Categoria</button>
+              <button onclick="loadReport('sellers')" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 border text-sm">Vendas por Vendedor</button>
+              <button onclick="loadReport('customers')" class="w-full text-left p-3 rounded-lg hover:bg-gray-50 border text-sm">Vendas por Cliente</button>
+            </div>
+          </div>
+          <div class="card p-4" id="reportDetail"><h3 class="font-semibold mb-3">Selecione um relatório</h3><p class="text-gray-400 text-sm">Clique em um relatório ao lado para visualizar</p></div>
+        </div>`;
+      if (sales.sales.length > 0) {
+        new Chart(document.getElementById('reportChart'), { type: 'line', data: { labels: sales.sales.map(s => new Date(s.date).toLocaleDateString('pt-BR')), datasets: [{ label: 'Faturamento', data: sales.sales.map(s => s.revenue), borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4 }] }, options: { responsive: true } });
+      }
+    }
+
+    async function loadReport(type) {
+      const data = await api(`/api/reports/${type}`);
+      const detail = document.getElementById('reportDetail');
+      const titles = { products: 'Vendas por Produto', categories: 'Vendas por Categoria', sellers: 'Vendas por Vendedor', customers: 'Vendas por Cliente' };
+      detail.innerHTML = `<h3 class="font-semibold mb-3">${titles[type]}</h3>
+        <div class="space-y-2">${data.map(item => {
+          const name = item.name || 'Sem nome';
+          const value = item.total_revenue || item.total_sales || item.total_spent || 0;
+          return `<div class="flex justify-between items-center py-2 border-b text-sm"><span>${name}</span><span class="font-medium">${formatCurrency(value)}</span></div>`;
+        }).join('') || '<p class="text-gray-400 text-sm">Sem dados</p>'}</div>`;
+    }
+
+    // ===== INVOICES =====
+    async function renderInvoices() {
+      const data = await api('/api/fiscal/invoices');
+      const settings = await api('/api/fiscal/settings');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="card p-4 mb-6">
+          <h3 class="font-semibold mb-3">Configuração Fiscal</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div><span class="text-gray-500">CNPJ:</span> <strong>${settings.cnpj || 'Não configurado'}</strong></div>
+            <div><span class="text-gray-500">Ambiente:</span> ${settings.environment === 'production' ? '<span class="text-green-600">Produção</span>' : '<span class="text-yellow-600">Homologação</span>'}</div>
+            <div><span class="text-gray-500">Regime:</span> ${settings.tax_regime || '-'}</div>
+          </div>
+        </div>
+        <div class="card overflow-hidden">
+          <div class="table-container">
+            <table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left p-3 font-medium text-gray-600">Número</th><th class="text-left p-3 font-medium text-gray-600 hidden sm:table-cell">Pedido</th><th class="text-left p-3 font-medium text-gray-600 hidden md:table-cell">Cliente</th><th class="text-right p-3 font-medium text-gray-600">Valor</th><th class="text-center p-3 font-medium text-gray-600">Status</th><th class="text-center p-3 font-medium text-gray-600">Data</th></tr></thead>
+            <tbody>${data.invoices.map(inv => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium">${inv.number || '-'}</td><td class="p-3 text-gray-600 hidden sm:table-cell">${inv.order_number || '-'}</td><td class="p-3 text-gray-600 hidden md:table-cell">${inv.customer_name || '-'}</td><td class="p-3 text-right">${formatCurrency(inv.total_value)}</td><td class="p-3 text-center">${statusBadge(inv.status)}</td><td class="p-3 text-center text-xs">${formatDate(inv.issued_at || inv.created_at)}</td></tr>`).join('') || '<tr><td colspan="6" class="p-8 text-center text-gray-400">Nenhuma nota fiscal emitida</td></tr>'}</tbody></table>
+          </div>
+        </div>`;
+    }
+
+    // ===== COUPONS =====
+    async function renderCoupons() {
+      const coupons = await api('/api/coupons');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="flex justify-between items-center mb-4"><div></div><button onclick="openCouponModal()" class="btn-primary">+ Novo Cupom</button></div>
+        <div class="card overflow-hidden">
+          <div class="table-container">
+            <table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left p-3 font-medium text-gray-600">Código</th><th class="text-left p-3 font-medium text-gray-600">Tipo</th><th class="text-right p-3 font-medium text-gray-600">Valor</th><th class="text-center p-3 font-medium text-gray-600">Usos</th><th class="text-center p-3 font-medium text-gray-600">Status</th><th class="text-center p-3 font-medium text-gray-600">Ações</th></tr></thead>
+            <tbody>${coupons.map(c => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium font-mono">${c.code}</td><td class="p-3">${c.type === 'percentage' ? 'Porcentagem' : 'Valor fixo'}</td><td class="p-3 text-right">${c.type === 'percentage' ? c.value + '%' : formatCurrency(c.value)}</td><td class="p-3 text-center">${c.used_count}/${c.max_uses || '∞'}</td><td class="p-3 text-center">${statusBadge(c.status)}</td><td class="p-3 text-center"><button onclick="deleteCoupon(${c.id})" class="text-red-600 text-xs">Excluir</button></td></tr>`).join('') || '<tr><td colspan="6" class="p-8 text-center text-gray-400">Nenhum cupom</td></tr>'}</tbody></table>
+          </div>
+        </div>
+        <div id="couponModal"></div>`;
+    }
+
+    function openCouponModal() {
+      document.getElementById('couponModal').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()"><div class="modal-content">
+          <h3 class="text-lg font-semibold mb-4">Novo Cupom</h3>
+          <form onsubmit="saveCoupon(event)">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="text-sm font-medium text-gray-700">Código *</label><input name="code" class="input-field mt-1 uppercase" required></div>
+              <div><label class="text-sm font-medium text-gray-700">Tipo *</label><select name="type" class="input-field mt-1"><option value="percentage">Porcentagem (%)</option><option value="fixed">Valor Fixo (R$)</option></select></div>
+              <div><label class="text-sm font-medium text-gray-700">Valor *</label><input name="value" type="number" step="0.01" class="input-field mt-1" required></div>
+              <div><label class="text-sm font-medium text-gray-700">Compra Mínima</label><input name="min_purchase" type="number" step="0.01" class="input-field mt-1" value="0"></div>
+              <div><label class="text-sm font-medium text-gray-700">Data Início</label><input name="start_date" type="date" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Data Fim</label><input name="end_date" type="date" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Máx. Usos</label><input name="max_uses" type="number" class="input-field mt-1"></div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4"><button type="button" onclick="this.closest('.modal-overlay').remove()" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Salvar</button></div>
+          </form>
+        </div></div>`;
+    }
+
+    async function saveCoupon(e) {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      try { await api('/api/coupons', { method: 'POST', body: JSON.stringify(data) }); toast('Cupom criado'); document.querySelector('.modal-overlay').remove(); renderCoupons(); } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function deleteCoupon(id) { if (!confirm('Excluir?')) return; try { await api(`/api/coupons/${id}`, { method: 'DELETE' }); toast('Excluído'); renderCoupons(); } catch (err) { toast(err.message, 'error'); } }
+
+    // ===== SETTINGS =====
+    async function renderSettings() {
+      const data = await api('/api/settings');
+      const c = data.company || {};
+      document.getElementById('pageContent').innerHTML = `
+        <form onsubmit="saveSettings(event)" class="space-y-6">
+          <div class="card p-4">
+            <h3 class="font-semibold mb-4">Dados da Empresa</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="text-sm font-medium text-gray-700">Nome da Loja</label><input name="name" value="${c.name || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Nome Fantasia</label><input name="trade_name" value="${c.trade_name || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">CNPJ</label><input name="cnpj" value="${c.cnpj || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Telefone</label><input name="phone" value="${c.phone || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Email</label><input name="email" value="${c.email || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">WhatsApp</label><input name="whatsapp" value="${c.whatsapp || ''}" class="input-field mt-1"></div>
+              <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-700">Endereço</label><input name="address" value="${c.address || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Cidade</label><input name="city" value="${c.city || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Estado</label><input name="state" value="${c.state || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Instagram</label><input name="instagram" value="${c.instagram || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Facebook</label><input name="facebook" value="${c.facebook || ''}" class="input-field mt-1"></div>
+              <div><label class="text-sm font-medium text-gray-700">Cor Principal</label><input name="primary_color" type="color" value="${c.primary_color || '#6366f1'}" class="input-field mt-1 h-10"></div>
+              <div><label class="text-sm font-medium text-gray-700">Cor Secundária</label><input name="secondary_color" type="color" value="${c.secondary_color || '#8b5cf6'}" class="input-field mt-1 h-10"></div>
+            </div>
+          </div>
+          <div class="flex justify-end"><button type="submit" class="btn-primary">Salvar Configurações</button></div>
+        </form>`;
+    }
+
+    async function saveSettings(e) {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      try { await api('/api/settings/company', { method: 'PUT', body: JSON.stringify(data) }); toast('Configurações salvas'); } catch (err) { toast(err.message, 'error'); }
+    }
+
+    // ===== USERS =====
+    async function renderUsers() {
+      const data = await api('/api/settings/users');
+      document.getElementById('pageContent').innerHTML = `
+        <div class="card overflow-hidden">
+          <div class="table-container">
+            <table class="w-full text-sm"><thead class="bg-gray-50 border-b"><tr><th class="text-left p-3 font-medium text-gray-600">Nome</th><th class="text-left p-3 font-medium text-gray-600 hidden sm:table-cell">Email</th><th class="text-left p-3 font-medium text-gray-600 hidden md:table-cell">Perfil</th><th class="text-center p-3 font-medium text-gray-600">Status</th><th class="text-center p-3 font-medium text-gray-600 hidden sm:table-cell">Último Acesso</th></tr></thead>
+            <tbody>${data.users.map(u => `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-medium">${u.name}</td><td class="p-3 text-gray-600 hidden sm:table-cell">${u.email}</td><td class="p-3 text-gray-600 hidden md:table-cell">${u.role_name || '-'}</td><td class="p-3 text-center">${statusBadge(u.status)}</td><td class="p-3 text-center text-xs hidden sm:table-cell">${u.last_login ? formatDate(u.last_login) : 'Nunca'}</td></tr>`).join('')}</tbody></table>
+          </div>
+        </div>`;
+    }
+
+    // ===== INITIALIZATION =====
+    function toggleNotifications() { toast('Sem novas notificações', 'info'); }
+
+    // Check auth
+    if (!getToken()) { window.location.href = '/login'; }
+    else {
+      const user = getUser();
+      const company = getCompany();
+      if (user) {
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userInitial').textContent = user.name?.charAt(0) || 'A';
+      }
+      if (company) document.getElementById('companyName').textContent = company.name;
+      navigate('dashboard');
+    }
+
+    // Responsive sidebar
+    if (window.innerWidth <= 768) {
+      document.getElementById('sidebar').classList.add('collapsed');
+      document.getElementById('mainContent').classList.add('expanded');
+    }
+  </script>
+</body>
+</html>

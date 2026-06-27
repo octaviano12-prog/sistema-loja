@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ModaControl Pro - Loja Online</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>* { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-white min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-white border-b sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/" onclick="navigate('home')" class="text-xl font-bold text-indigo-600">ModaControl</a>
+      </div>
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <a href="#" onclick="navigate('home')" class="text-gray-700 hover:text-indigo-600">Início</a>
+        <a href="#" onclick="navigate('products')" class="text-gray-700 hover:text-indigo-600">Produtos</a>
+        <a href="#" onclick="navigate('categories')" class="text-gray-700 hover:text-indigo-600">Categorias</a>
+        <a href="#" onclick="navigate('about')" class="text-gray-700 hover:text-indigo-600">Sobre</a>
+        <a href="#" onclick="navigate('contact')" class="text-gray-700 hover:text-indigo-600">Contato</a>
+      </nav>
+      <div class="flex items-center gap-3">
+        <input type="text" id="storeSearch" placeholder="Buscar..." class="hidden sm:block border rounded-lg px-3 py-2 text-sm w-40 focus:w-56 transition-all" onkeyup="if(event.key==='Enter')doSearch()">
+        <button onclick="toggleCart()" class="relative p-2 hover:bg-gray-100 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+          <span id="cartBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-indigo-600 text-white text-xs rounded-full flex items-center justify-center">0</span>
+        </button>
+        <a href="/admin" class="text-sm text-gray-500 hover:text-indigo-600 hidden sm:block">Admin</a>
+      </div>
+    </div>
+    <!-- Mobile menu -->
+    <div class="md:hidden border-t px-4 py-2 flex gap-4 text-sm overflow-x-auto">
+      <a href="#" onclick="navigate('home')" class="whitespace-nowrap">Início</a>
+      <a href="#" onclick="navigate('products')" class="whitespace-nowrap">Produtos</a>
+      <a href="#" onclick="navigate('categories')" class="whitespace-nowrap">Categorias</a>
+      <a href="#" onclick="navigate('about')" class="whitespace-nowrap">Sobre</a>
+      <a href="#" onclick="navigate('contact')" class="whitespace-nowrap">Contato</a>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="flex-1" id="storeContent"></main>
+
+  <!-- Cart Sidebar -->
+  <div id="cartSidebar" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="toggleCart()"></div>
+    <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl flex flex-col">
+      <div class="p-4 border-b flex justify-between items-center">
+        <h3 class="text-lg font-semibold">Carrinho</h3>
+        <button onclick="toggleCart()" class="p-2 hover:bg-gray-100 rounded-lg">&times;</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4" id="cartItemsList"></div>
+      <div class="border-t p-4">
+        <div class="flex justify-between mb-2"><span>Subtotal:</span><span id="cartSubtotal" class="font-bold">R$ 0,00</span></div>
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="couponInput" placeholder="Cupom de desconto" class="flex-1 border rounded-lg px-3 py-2 text-sm">
+          <button onclick="applyCoupon()" class="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Aplicar</button>
+        </div>
+        <button onclick="navigate('checkout')" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700">Finalizar Compra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white mt-auto">
+    <div class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div>
+        <h4 class="font-bold text-lg mb-3">ModaControl Pro</h4>
+        <p class="text-gray-400 text-sm">Sua loja de roupas online com as melhores peças e preços.</p>
+      </div>
+      <div>
+        <h5 class="font-medium mb-3">Links Úteis</h5>
+        <div class="space-y-2 text-sm text-gray-400">
+          <a href="#" onclick="navigate('about')" class="block hover:text-white">Sobre Nós</a>
+          <a href="#" onclick="navigate('contact')" class="block hover:text-white">Contato</a>
+          <a href="#" onclick="navigate('return-policy')" class="block hover:text-white">Trocas e Devoluções</a>
+          <a href="#" onclick="navigate('privacy')" class="block hover:text-white">Privacidade</a>
+        </div>
+      </div>
+      <div>
+        <h5 class="font-medium mb-3">Atendimento</h5>
+        <div class="space-y-2 text-sm text-gray-400">
+          <p>Seg a Sex: 9h às 18h</p>
+          <p>Sáb: 9h às 13h</p>
+          <a href="https://wa.me/5511999999999" class="block text-green-400 hover:text-green-300">WhatsApp</a>
+        </div>
+      </div>
+      <div>
+        <h5 class="font-medium mb-3">Pagamento</h5>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="bg-gray-800 px-2 py-1 rounded">Pix</span>
+          <span class="bg-gray-800 px-2 py-1 rounded">Visa</span>
+          <span class="bg-gray-800 px-2 py-1 rounded">Master</span>
+          <span class="bg-gray-800 px-2 py-1 rounded">Elo</span>
+          <span class="bg-gray-800 px-2 py-1 rounded">Boleto</span>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-gray-800 py-4 text-center text-sm text-gray-500">&copy; 2024 ModaControl Pro. Todos os direitos reservados.</div>
+  </footer>
+
+  <!-- WhatsApp button -->
+  <a href="https://wa.me/5511999999999" target="_blank" class="fixed bottom-4 right-4 bg-green-500 text-white p-3 rounded-full shadow-lg hover:bg-green-600 z-40">
+    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+
+  <script>
+    let storeCart = [];
+    let storeCategories = [];
+    let couponDiscount = 0;
+
+    function formatCurrency(v) { return `R$ ${parseFloat(v || 0).toFixed(2).replace('.', ',')}`; }
+
+    async function navigate(page, params = {}) {
+      const content = document.getElementById('storeContent');
+      content.innerHTML = '<div class="flex items-center justify-center h-64"><div class="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full"></div></div>';
+      window.scrollTo(0, 0);
+
+      switch (page) {
+        case 'home': await renderHome(); break;
+        case 'products': await renderProductsList(params); break;
+        case 'product': await renderProductDetail(params.slug); break;
+        case 'categories': await renderCategoriesPage(); break;
+        case 'checkout': renderCheckout(); break;
+        case 'about': case 'contact': case 'return-policy': case 'privacy': case 'terms': await renderPage(page); break;
+        case 'track': renderTrackOrder(); break;
+        default: await renderHome();
+      }
+    }
+
+    async function renderHome() {
+      const data = await fetch('/store/api/home').then(r => r.json());
+      const c = data.company || {};
+      document.getElementById('storeContent').innerHTML = `
+        <!-- Hero Banner -->
+        <section class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+          <div class="max-w-7xl mx-auto px-4 py-16 md:py-24 text-center">
+            <h1 class="text-3xl md:text-5xl font-bold mb-4">Nova Coleção ${new Date().getFullYear()}</h1>
+            <p class="text-lg md:text-xl opacity-90 mb-8">Descubra as últimas tendências em moda</p>
+            <button onclick="navigate('products')" class="bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-indigo-50 transition">Ver Coleção</button>
+          </div>
+        </section>
+        <!-- Categories -->
+        <section class="max-w-7xl mx-auto px-4 py-12">
+          <h2 class="text-2xl font-bold mb-6">Categorias</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            ${data.categories.map(cat => `<a href="#" onclick="navigate('products', {category: '${cat.slug}'})" class="bg-gray-50 rounded-xl p-4 text-center hover:bg-indigo-50 hover:text-indigo-600 transition">
+              <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-2"><svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg></div>
+              <p class="text-sm font-medium">${cat.name}</p>
+              <p class="text-xs text-gray-400">${cat.products_count || 0} itens</p>
+            </a>`).join('') || '<p class="text-gray-400 col-span-full">Nenhuma categoria cadastrada</p>'}
+          </div>
+        </section>
+        <!-- Featured -->
+        ${data.featured.length ? `<section class="max-w-7xl mx-auto px-4 py-8">
+          <h2 class="text-2xl font-bold mb-6">Destaques</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">${data.featured.map(p => productCard(p)).join('')}</div>
+        </section>` : ''}
+        <!-- New arrivals -->
+        ${data.newArrivals.length ? `<section class="max-w-7xl mx-auto px-4 py-8">
+          <h2 class="text-2xl font-bold mb-6">Novidades</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">${data.newArrivals.slice(0, 8).map(p => productCard(p)).join('')}</div>
+        </section>` : ''}
+        <!-- Promotional -->
+        ${data.promotional.length ? `<section class="max-w-7xl mx-auto px-4 py-8">
+          <h2 class="text-2xl font-bold mb-6 text-red-600">Promoções</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">${data.promotional.slice(0, 8).map(p => productCard(p)).join('')}</div>
+        </section>` : ''}
+        <!-- Newsletter -->
+        <section class="bg-gray-50 py-12 mt-8">
+          <div class="max-w-7xl mx-auto px-4 text-center">
+            <h2 class="text-2xl font-bold mb-2">Fique por dentro</h2>
+            <p class="text-gray-500 mb-4">Receba novidades e promoções exclusivas</p>
+            <div class="flex max-w-md mx-auto gap-2">
+              <input type="email" placeholder="Seu email" class="flex-1 border rounded-lg px-4 py-2">
+              <button class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">Inscrever</button>
+            </div>
+          </div>
+        </section>`;
+    }
+
+    function productCard(p) {
+      const images = JSON.parse(p.images || '[]');
+      return `<a href="#" onclick="navigate('product', {slug: '${p.slug || p.id}'})" class="group">
+        <div class="aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden mb-2 relative">
+          ${images.length ? `<img src="${images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">` : `<div class="w-full h-full flex items-center justify-center text-gray-300"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>`}
+          ${p.promotional_price ? '<span class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">Promoção</span>' : ''}
+          ${p.is_new ? '<span class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">Novo</span>' : ''}
+        </div>
+        <h3 class="text-sm font-medium text-gray-800 truncate">${p.name}</h3>
+        <div class="flex items-center gap-2">
+          ${p.promotional_price ? `<span class="text-sm font-bold text-red-600">${formatCurrency(p.promotional_price)}</span><span class="text-xs text-gray-400 line-through">${formatCurrency(p.price)}</span>` : `<span class="text-sm font-bold text-gray-800">${formatCurrency(p.price)}</span>`}
+        </div>
+      </a>`;
+    }
+
+    async function renderProductsList(params = {}) {
+      const categories = await fetch('/store/api/categories').then(r => r.json());
+      storeCategories = categories;
+      const searchParams = new URLSearchParams();
+      if (params.category) searchParams.set('category', params.category);
+      if (params.search) searchParams.set('search', params.search);
+      const data = await fetch(`/store/api/products?${searchParams.toString()}`).then(r => r.json());
+      
+      document.getElementById('storeContent').innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 py-8">
+          <div class="flex flex-col md:flex-row gap-6">
+            <!-- Filters -->
+            <aside class="w-full md:w-56 shrink-0">
+              <h3 class="font-semibold mb-3">Categorias</h3>
+              <div class="space-y-1 mb-6">${categories.map(c => `<a href="#" onclick="navigate('products', {category: '${c.slug}'})" class="block py-1 text-sm ${params.category === c.slug ? 'text-indigo-600 font-medium' : 'text-gray-600 hover:text-indigo-600'}">${c.name} <span class="text-gray-400">(${c.products_count || 0})</span></a>`).join('')}</div>
+              <h3 class="font-semibold mb-3">Ordenar</h3>
+              <select onchange="sortProducts(this.value, '${params.category || ''}')" class="w-full border rounded-lg px-3 py-2 text-sm">
+                <option value="">Recentes</option>
+                <option value="price_asc">Menor Preço</option>
+                <option value="price_desc">Maior Preço</option>
+                <option value="name">Nome A-Z</option>
+                <option value="popular">Populares</option>
+              </select>
+            </aside>
+            <!-- Products Grid -->
+            <div class="flex-1">
+              <div class="flex justify-between items-center mb-4">
+                <h1 class="text-xl font-bold">${params.search ? `Resultados para "${params.search}"` : 'Todos os Produtos'}</h1>
+                <span class="text-sm text-gray-500">${data.total} produtos</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                ${data.products.map(p => productCard(p)).join('') || '<p class="col-span-full text-center text-gray-400 py-12">Nenhum produto encontrado</p>'}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    async function renderProductDetail(slug) {
+      const product = await fetch(`/store/api/products/${slug}`).then(r => r.json());
+      if (product.error) { document.getElementById('storeContent').innerHTML = '<div class="text-center py-12 text-gray-500">Produto não encontrado</div>'; return; }
+      const images = product.images || [];
+      const minPrice = product.promotional_price || product.price;
+      
+      document.getElementById('storeContent').innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 py-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Images -->
+            <div>
+              <div class="aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden mb-3" id="mainImage">
+                ${images.length ? `<img src="${images[0]}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-gray-300"><svg class="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>`}
+              </div>
+              ${images.length > 1 ? `<div class="flex gap-2 overflow-x-auto">${images.map((img, i) => `<button onclick="document.getElementById('mainImage').innerHTML='<img src=\\'${img}\\' class=\\'w-full h-full object-cover\\'>'" class="w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 border-transparent hover:border-indigo-600"><img src="${img}" class="w-full h-full object-cover"></button>`).join('')}</div>` : ''}
+            </div>
+            <!-- Info -->
+            <div>
+              ${product.brand_name ? `<p class="text-sm text-gray-500 mb-1">${product.brand_name}</p>` : ''}
+              <h1 class="text-2xl md:text-3xl font-bold mb-2">${product.name}</h1>
+              <p class="text-sm text-gray-500 mb-4">Código: ${product.sku || product.id}</p>
+              <div class="mb-4">
+                ${product.promotional_price ? `<span class="text-3xl font-bold text-red-600">${formatCurrency(product.promotional_price)}</span><span class="text-lg text-gray-400 line-through ml-2">${formatCurrency(product.price)}</span>` : `<span class="text-3xl font-bold">${formatCurrency(product.price)}</span>`}
+              </div>
+              <p class="text-gray-600 mb-6">${product.short_description || product.description || ''}</p>
+              ${product.colors?.length ? `<div class="mb-4"><label class="text-sm font-medium mb-2 block">Cor:</label><div class="flex gap-2 flex-wrap" id="colorOptions">${product.colors.map(c => `<button onclick="selectOption('color', this, '${c}')" class="px-4 py-2 border rounded-lg text-sm hover:border-indigo-600" data-value="${c}">${c}</button>`).join('')}</div></div>` : ''}
+              ${product.sizes?.length ? `<div class="mb-4"><label class="text-sm font-medium mb-2 block">Tamanho:</label><div class="flex gap-2 flex-wrap" id="sizeOptions">${product.sizes.map(s => `<button onclick="selectOption('size', this, '${s}')" class="px-4 py-2 border rounded-lg text-sm hover:border-indigo-600" data-value="${s}">${s}</button>`).join('')}</div></div>` : ''}
+              <div class="mb-4"><label class="text-sm font-medium mb-2 block">Quantidade:</label><input type="number" id="productQty" value="1" min="1" class="w-24 border rounded-lg px-3 py-2"></div>
+              <div class="flex gap-3 mb-6">
+                <button onclick="addToCartFromProduct(${product.id})" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-medium hover:bg-indigo-700">Adicionar ao Carrinho</button>
+                <a href="https://wa.me/5511999999999?text=Olá! Tenho interesse no produto: ${encodeURIComponent(product.name)}" target="_blank" class="px-4 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>
+                </a>
+              </div>
+              <div class="border-t pt-4 text-sm text-gray-500 space-y-2">
+                <p>✓ Parcelamento em até 12x no cartão</p>
+                <p>✓ Frete grátis acima de R$ 299,00</p>
+                <p>✓ Troca grátis em 30 dias</p>
+              </div>
+            </div>
+          </div>
+          ${product.description ? `<div class="mt-8 border-t pt-8"><h3 class="text-xl font-bold mb-4">Descrição</h3><div class="text-gray-600">${product.description}</div></div>` : ''}
+          ${product.related?.length ? `<div class="mt-8"><h3 class="text-xl font-bold mb-4">Produtos Relacionados</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-4">${product.related.map(p => productCard(p)).join('')}</div></div>` : ''}
+        </div>`;
+    }
+
+    let selectedOptions = { color: null, size: null };
+    function selectOption(type, btn, value) {
+      selectedOptions[type] = value;
+      document.querySelectorAll(`#${type}Options button`).forEach(b => b.classList.remove('border-indigo-600', 'bg-indigo-50'));
+      btn.classList.add('border-indigo-600', 'bg-indigo-50');
+    }
+
+    function addToCartFromProduct(productId) {
+      const name = document.querySelector('h1').textContent;
+      const priceText = document.querySelector('.text-3xl.font-bold').textContent.replace('R$', '').replace(',', '.').trim();
+      const qty = parseInt(document.getElementById('productQty').value) || 1;
+      addToCart(productId, name, parseFloat(priceText.replace(/[^0-9.]/g, '')), null, null, selectedOptions.color, selectedOptions.size, qty);
+    }
+
+    async function renderCategoriesPage() {
+      const categories = await fetch('/store/api/categories').then(r => r.json());
+      document.getElementById('storeContent').innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 py-8">
+          <h1 class="text-2xl font-bold mb-6">Categorias</h1>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            ${categories.map(c => `<a href="#" onclick="navigate('products', {category: '${c.slug}'})" class="bg-gray-50 rounded-xl p-6 text-center hover:bg-indigo-50 transition">
+              <h3 class="font-semibold">${c.name}</h3>
+              <p class="text-sm text-gray-500">${c.products_count || 0} produtos</p>
+            </a>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    function renderCheckout() {
+      if (storeCart.length === 0) { navigate('products'); return; }
+      const subtotal = storeCart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+      const total = subtotal - couponDiscount;
+      document.getElementById('storeContent').innerHTML = `
+        <div class="max-w-4xl mx-auto px-4 py-8">
+          <h1 class="text-2xl font-bold mb-6">Finalizar Compra</h1>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 class="font-semibold mb-3">Dados Pessoais</h3>
+              <div class="space-y-3">
+                <input id="coName" placeholder="Nome completo *" class="w-full border rounded-lg px-4 py-2">
+                <input id="coEmail" placeholder="E-mail *" type="email" class="w-full border rounded-lg px-4 py-2">
+                <input id="coPhone" placeholder="Telefone / WhatsApp" class="w-full border rounded-lg px-4 py-2">
+                <input id="coCpf" placeholder="CPF" class="w-full border rounded-lg px-4 py-2">
+              </div>
+              <h3 class="font-semibold mb-3 mt-6">Endereço de Entrega</h3>
+              <div class="space-y-3">
+                <input id="coZip" placeholder="CEP" class="w-full border rounded-lg px-4 py-2">
+                <input id="coAddress" placeholder="Endereço" class="w-full border rounded-lg px-4 py-2">
+                <div class="grid grid-cols-2 gap-3">
+                  <input id="coCity" placeholder="Cidade" class="w-full border rounded-lg px-4 py-2">
+                  <input id="coState" placeholder="Estado" class="w-full border rounded-lg px-4 py-2">
+                </div>
+              </div>
+              <h3 class="font-semibold mb-3 mt-6">Forma de Pagamento</h3>
+              <div class="space-y-2">
+                <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><input type="radio" name="payment" value="pix" checked> <span>Pix</span></label>
+                <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><input type="radio" name="payment" value="card"> <span>Cartão de Crédito</span></label>
+                <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><input type="radio" name="payment" value="boleto"> <span>Boleto</span></label>
+              </div>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-3">Resumo do Pedido</h3>
+              <div class="border rounded-xl p-4 space-y-3 mb-4">
+                ${storeCart.map(i => `<div class="flex justify-between text-sm"><span>${i.name}${i.size ? ' (' + i.size + ')' : ''} x${i.quantity}</span><span>${formatCurrency(i.unit_price * i.quantity)}</span></div>`).join('')}
+              </div>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between"><span>Subtotal</span><span>${formatCurrency(subtotal)}</span></div>
+                ${couponDiscount > 0 ? `<div class="flex justify-between text-green-600"><span>Desconto</span><span>-${formatCurrency(couponDiscount)}</span></div>` : ''}
+                <div class="flex justify-between"><span>Frete</span><span>A calcular</span></div>
+                <div class="flex justify-between text-lg font-bold border-t pt-2"><span>Total</span><span class="text-indigo-600">${formatCurrency(total)}</span></div>
+              </div>
+              <button onclick="placeOrder()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-medium mt-4 hover:bg-indigo-700">Confirmar Pedido</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    async function placeOrder() {
+      const order = {
+        customer: {
+          name: document.getElementById('coName').value,
+          email: document.getElementById('coEmail').value,
+          phone: document.getElementById('coPhone').value,
+          cpf_cnpj: document.getElementById('coCpf').value,
+          zip_code: document.getElementById('coZip').value,
+          address: document.getElementById('coAddress').value,
+          city: document.getElementById('coCity').value,
+          state: document.getElementById('coState').value
+        },
+        items: storeCart.map(i => ({ product_id: i.product_id, variant_id: i.variant_id, name: i.name, sku: i.sku, color: i.color, size: i.size, quantity: i.quantity, unit_price: i.unit_price })),
+        payment_method: document.querySelector('input[name="payment"]:checked')?.value || 'pix',
+        discount: couponDiscount
+      };
+      if (!order.customer.name || !order.customer.email) { alert('Preencha nome e email'); return; }
+      const result = await fetch('/store/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(order) }).then(r => r.json());
+      if (result.error) { alert(result.error); return; }
+      storeCart = [];
+      couponDiscount = 0;
+      updateCartBadge();
+      document.getElementById('storeContent').innerHTML = `
+        <div class="max-w-lg mx-auto px-4 py-16 text-center">
+          <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h1 class="text-2xl font-bold mb-2">Pedido Realizado!</h1>
+          <p class="text-gray-500 mb-4">Número do pedido: <strong>${result.order_number}</strong></p>
+          <p class="text-gray-500 mb-8">Total: <strong>${formatCurrency(result.total)}</strong></p>
+          <p class="text-sm text-gray-400 mb-8">Você receberá uma confirmação por email.</p>
+          <button onclick="navigate('home')" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-indigo-700">Continuar Comprando</button>
+        </div>`;
+    }
+
+    function renderTrackOrder() {
+      document.getElementById('storeContent').innerHTML = `
+        <div class="max-w-lg mx-auto px-4 py-16 text-center">
+          <h1 class="text-2xl font-bold mb-4">Acompanhar Pedido</h1>
+          <input id="trackNumber" placeholder="Número do pedido" class="w-full border rounded-lg px-4 py-3 mb-4">
+          <button onclick="doTrack()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium">Rastrear</button>
+          <div id="trackResult" class="mt-6"></div>
+        </div>`;
+    }
+
+    async function doTrack() {
+      const number = document.getElementById('trackNumber').value;
+      const result = await fetch(`/store/api/orders/track/${number}`).then(r => r.json());
+      if (result.error) { document.getElementById('trackResult').innerHTML = `<p class="text-red-500">${result.error}</p>`; return; }
+      const statusLabels = { new: 'Novo', pending_payment: 'Aguardando Pagamento', paid: 'Pago', processing: 'Em Separação', shipped: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' };
+      document.getElementById('trackResult').innerHTML = `<div class="border rounded-xl p-4 text-left"><p><strong>Pedido:</strong> ${result.order_number}</p><p><strong>Status:</strong> ${statusLabels[result.status] || result.status}</p><p><strong>Total:</strong> ${formatCurrency(result.total)}</p><p><strong>Data:</strong> ${new Date(result.created_at).toLocaleDateString('pt-BR')}</p></div>`;
+    }
+
+    async function renderPage(slug) {
+      const page = await fetch(`/store/api/pages/${slug}`).then(r => r.json());
+      document.getElementById('storeContent').innerHTML = `<div class="max-w-3xl mx-auto px-4 py-12"><h1 class="text-2xl font-bold mb-6">${page.title}</h1><div class="text-gray-600 whitespace-pre-line">${page.content || 'Conteúdo não disponível.'}</div></div>`;
+    }
+
+    // Cart functions
+    function addToCart(productId, name, price, sku, variantId, color, size, qty = 1) {
+      const existing = storeCart.find(i => i.product_id === productId && i.variant_id === variantId && i.color === color && i.size === size);
+      if (existing) { existing.quantity += qty; }
+      else { storeCart.push({ product_id: productId, name, unit_price: price, sku, variant_id: variantId || null, color: color || '', size: size || '', quantity: qty }); }
+      updateCartBadge();
+      renderCartSidebar();
+    }
+
+    function removeFromCart(i) { storeCart.splice(i, 1); updateCartBadge(); renderCartSidebar(); }
+
+    function updateCartBadge() {
+      const badge = document.getElementById('cartBadge');
+      const count = storeCart.reduce((s, i) => s + i.quantity, 0);
+      badge.textContent = count;
+      badge.classList.toggle('hidden', count === 0);
+    }
+
+    function toggleCart() {
+      const sidebar = document.getElementById('cartSidebar');
+      sidebar.classList.toggle('hidden');
+      renderCartSidebar();
+    }
+
+    function renderCartSidebar() {
+      const itemsEl = document.getElementById('cartItemsList');
+      if (!itemsEl) return;
+      if (storeCart.length === 0) { itemsEl.innerHTML = '<p class="text-center text-gray-400 py-8">Carrinho vazio</p>'; }
+      else {
+        itemsEl.innerHTML = storeCart.map((i, idx) => `<div class="flex items-center gap-3 py-3 border-b">
+          <div class="w-14 h-14 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center"><svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>
+          <div class="flex-1 min-w-0"><p class="text-sm font-medium truncate">${i.name}</p>${i.size || i.color ? `<p class="text-xs text-gray-500">${i.size || ''} ${i.color || ''}</p>` : ''}<p class="text-sm">${formatCurrency(i.unit_price)}</p></div>
+          <div class="text-right"><p class="text-sm font-bold">${formatCurrency(i.unit_price * i.quantity)}</p><button onclick="removeFromCart(${idx})" class="text-xs text-red-500">Remover</button></div>
+        </div>`).join('');
+      }
+      const subtotal = storeCart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+      const el = document.getElementById('cartSubtotal');
+      if (el) el.textContent = formatCurrency(subtotal);
+    }
+
+    async function applyCoupon() {
+      const code = document.getElementById('couponInput').value;
+      if (!code) return;
+      const subtotal = storeCart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+      const result = await fetch('/store/api/coupon/validate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, cart_total: subtotal }) }).then(r => r.json());
+      if (result.error) { alert(result.error); return; }
+      couponDiscount = result.discount;
+      renderCartSidebar();
+      alert(`Cupom aplicado! Desconto: ${formatCurrency(couponDiscount)}`);
+    }
+
+    function doSearch() {
+      const q = document.getElementById('storeSearch').value;
+      if (q) navigate('products', { search: q });
+    }
+
+    function sortProducts(sort, category) {
+      const params = new URLSearchParams();
+      if (sort) params.set('sort', sort);
+      if (category) params.set('category', category);
+      fetch(`/store/api/products?${params}`).then(r => r.json()).then(data => {
+        // Re-render grid - simplified
+      });
+    }
+
+    // Init
+    navigate('home');
+  </script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ModaControl Pro - PDV</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    .product-card { transition: all 0.2s; cursor: pointer; }
+    .product-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .cart-item { transition: background 0.2s; }
+    .cart-item:hover { background: #f8fafc; }
+    .payment-btn { transition: all 0.2s; }
+    .payment-btn:hover { transform: scale(1.02); }
+    .payment-btn.selected { ring: 2px; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="app" class="flex flex-col h-screen">
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white px-4 py-2 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <button onclick="window.location='/admin'" class="p-1 rounded hover:bg-indigo-700">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h1 class="font-bold text-lg">PDV</h1>
+        <span id="cashStatus" class="text-xs bg-indigo-500 px-2 py-1 rounded-full">Verificando caixa...</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="operatorName" class="text-sm hidden sm:block">Operador</span>
+        <button onclick="openCashActions()" class="p-2 rounded-lg hover:bg-indigo-700">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Left: Products -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Search -->
+        <div class="p-3 bg-white border-b">
+          <div class="flex gap-2">
+            <div class="flex-1 relative">
+              <input type="text" id="productSearch" placeholder="Buscar por nome, código ou SKU..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" autofocus onkeyup="searchProducts()">
+              <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <button onclick="showAllProducts()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm whitespace-nowrap">Produtos</button>
+          </div>
+          <div id="searchResults" class="mt-2 hidden"></div>
+        </div>
+        <!-- Product grid -->
+        <div class="flex-1 overflow-y-auto p-3">
+          <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2"></div>
+        </div>
+      </div>
+
+      <!-- Right: Cart -->
+      <div class="w-full sm:w-96 bg-white border-l flex flex-col shrink-0">
+        <!-- Customer/Seller -->
+        <div class="p-3 border-b space-y-2">
+          <div class="flex gap-2">
+            <select id="customerSelect" class="flex-1 text-sm border rounded-lg px-2 py-2">
+              <option value="">Cliente (opcional)</option>
+            </select>
+            <button onclick="loadCustomers()" class="p-2 text-gray-400 hover:text-indigo-600">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+          </div>
+          <select id="sellerSelect" class="w-full text-sm border rounded-lg px-2 py-2">
+            <option value="">Vendedor (opcional)</option>
+          </select>
+        </div>
+        <!-- Cart items -->
+        <div class="flex-1 overflow-y-auto">
+          <div id="cartItems" class="divide-y">
+            <div class="p-8 text-center text-gray-400 text-sm">Carrinho vazio<br><span class="text-xs">Adicione produtos para iniciar a venda</span></div>
+          </div>
+        </div>
+        <!-- Cart summary -->
+        <div class="border-t bg-gray-50 p-3">
+          <div class="flex justify-between text-sm mb-1"><span class="text-gray-600">Subtotal:</span><span id="cartSubtotal" class="font-medium">R$ 0,00</span></div>
+          <div class="flex justify-between items-center text-sm mb-2">
+            <span class="text-gray-600">Desconto:</span>
+            <div class="flex items-center gap-1">
+              <input type="number" id="discountInput" value="0" min="0" step="0.01" class="w-20 text-right border rounded px-2 py-1 text-sm" onchange="updateCart()">
+            </div>
+          </div>
+          <div class="flex justify-between text-lg font-bold mb-3"><span>Total:</span><span id="cartTotal" class="text-indigo-600">R$ 0,00</span></div>
+          <!-- Payment buttons -->
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            <button onclick="finalizeSale('cash')" class="payment-btn bg-green-500 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-green-600">💵 Dinheiro</button>
+            <button onclick="finalizeSale('card')" class="payment-btn bg-blue-500 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-blue-600">💳 Cartão</button>
+            <button onclick="finalizeSale('pix')" class="payment-btn bg-purple-500 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-purple-600">📱 Pix</button>
+            <button onclick="finalizeSale('credit')" class="payment-btn bg-orange-500 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-orange-600">📋 Crediário</button>
+          </div>
+          <button onclick="clearCart()" class="w-full py-2 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50">Limpar Carrinho</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div id="modalContainer"></div>
+
+  <script>
+    const API = '';
+    let cart = [];
+    let cashOpen = false;
+    let allProducts = [];
+
+    function getToken() { return localStorage.getItem('token'); }
+    function getUser() { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } }
+
+    async function api(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
+      const res = await fetch(`${API}${path}`, { ...options, headers });
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      return res.json();
+    }
+
+    function formatCurrency(v) { return `R$ ${parseFloat(v || 0).toFixed(2).replace('.', ',')}`; }
+
+    // Initialize
+    async function init() {
+      const user = getUser();
+      if (user) document.getElementById('operatorName').textContent = user.name;
+      if (!getToken()) { window.location.href = '/login'; return; }
+      
+      // Check cash register
+      const cash = await api('/api/pdv/cash-register');
+      const statusEl = document.getElementById('cashStatus');
+      if (cash.status === 'open') {
+        cashOpen = true;
+        statusEl.textContent = 'Caixa Aberto';
+        statusEl.className = 'text-xs bg-green-500 px-2 py-1 rounded-full';
+      } else {
+        cashOpen = false;
+        statusEl.textContent = 'Caixa Fechado';
+        statusEl.className = 'text-xs bg-red-500 px-2 py-1 rounded-full';
+        showOpenCashModal();
+      }
+
+      await loadCustomers();
+      await loadSellers();
+      await showAllProducts();
+    }
+
+    // Cash register
+    function showOpenCashModal() {
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-semibold mb-4">Abrir Caixa</h3>
+            <p class="text-sm text-gray-500 mb-3">Informe o valor inicial do caixa (troco):</p>
+            <input type="number" id="initialAmount" value="100" min="0" step="0.01" class="w-full border rounded-lg px-4 py-3 text-lg mb-4" placeholder="Valor inicial">
+            <button onclick="openCash()" class="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600">Abrir Caixa</button>
+          </div>
+        </div>`;
+    }
+
+    async function openCash() {
+      const amount = document.getElementById('initialAmount').value;
+      const result = await api('/api/pdv/cash-register/open', { method: 'POST', body: JSON.stringify({ initial_amount: amount }) });
+      if (result.error) { alert(result.error); return; }
+      cashOpen = true;
+      document.getElementById('cashStatus').textContent = 'Caixa Aberto';
+      document.getElementById('cashStatus').className = 'text-xs bg-green-500 px-2 py-1 rounded-full';
+      document.getElementById('modalContainer').innerHTML = '';
+    }
+
+    function openCashActions() {
+      if (!cashOpen) { showOpenCashModal(); return; }
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-semibold mb-4">Ações do Caixa</h3>
+            <div class="space-y-3">
+              <button onclick="showWithdrawalModal()" class="w-full p-3 border rounded-lg text-left hover:bg-gray-50"><span class="font-medium">💸 Sangria</span><br><span class="text-xs text-gray-500">Retirar dinheiro do caixa</span></button>
+              <button onclick="showDepositModal()" class="w-full p-3 border rounded-lg text-left hover:bg-gray-50"><span class="font-medium">💰 Suprimento</span><br><span class="text-xs text-gray-500">Adicionar dinheiro ao caixa</span></button>
+              <button onclick="showCloseCashModal()" class="w-full p-3 border border-red-300 rounded-lg text-left hover:bg-red-50"><span class="font-medium text-red-600">🔒 Fechar Caixa</span><br><span class="text-xs text-gray-500">Encerrar as operações</span></button>
+            </div>
+            <button onclick="document.getElementById('modalContainer').innerHTML=''" class="w-full mt-4 p-2 text-gray-500 text-sm">Cancelar</button>
+          </div>
+        </div>`;
+    }
+
+    function showWithdrawalModal() {
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-semibold mb-4">Sangria</h3>
+            <input type="number" id="withdrawalAmount" placeholder="Valor" class="w-full border rounded-lg px-4 py-3 mb-3" min="0" step="0.01">
+            <input type="text" id="withdrawalDesc" placeholder="Descrição" class="w-full border rounded-lg px-4 py-3 mb-3" value="Sangria">
+            <div class="flex gap-2"><button onclick="doWithdrawal()" class="flex-1 bg-orange-500 text-white py-3 rounded-lg font-medium">Confirmar</button><button onclick="openCashActions()" class="flex-1 border py-3 rounded-lg">Cancelar</button></div>
+          </div>
+        </div>`;
+    }
+
+    async function doWithdrawal() {
+      await api('/api/pdv/cash-register/withdrawal', { method: 'POST', body: JSON.stringify({ amount: document.getElementById('withdrawalAmount').value, description: document.getElementById('withdrawalDesc').value }) });
+      alert('Sangria realizada!');
+      document.getElementById('modalContainer').innerHTML = '';
+    }
+
+    function showDepositModal() {
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-semibold mb-4">Suprimento</h3>
+            <input type="number" id="depositAmount" placeholder="Valor" class="w-full border rounded-lg px-4 py-3 mb-3" min="0" step="0.01">
+            <input type="text" id="depositDesc" placeholder="Descrição" class="w-full border rounded-lg px-4 py-3 mb-3" value="Suprimento">
+            <div class="flex gap-2"><button onclick="doDeposit()" class="flex-1 bg-green-500 text-white py-3 rounded-lg font-medium">Confirmar</button><button onclick="openCashActions()" class="flex-1 border py-3 rounded-lg">Cancelar</button></div>
+          </div>
+        </div>`;
+    }
+
+    async function doDeposit() {
+      await api('/api/pdv/cash-register/deposit', { method: 'POST', body: JSON.stringify({ amount: document.getElementById('depositAmount').value, description: document.getElementById('depositDesc').value }) });
+      alert('Suprimento realizado!');
+      document.getElementById('modalContainer').innerHTML = '';
+    }
+
+    function showCloseCashModal() {
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-semibold mb-4">Fechar Caixa</h3>
+            <p class="text-sm text-gray-500 mb-3">Informe o valor final em dinheiro no caixa:</p>
+            <input type="number" id="finalAmount" placeholder="Valor final" class="w-full border rounded-lg px-4 py-3 text-lg mb-3" min="0" step="0.01">
+            <div class="flex gap-2"><button onclick="doCloseCash()" class="flex-1 bg-red-500 text-white py-3 rounded-lg font-medium">Fechar Caixa</button><button onclick="openCashActions()" class="flex-1 border py-3 rounded-lg">Cancelar</button></div>
+          </div>
+        </div>`;
+    }
+
+    async function doCloseCash() {
+      const result = await api('/api/pdv/cash-register/close', { method: 'POST', body: JSON.stringify({ final_amount: document.getElementById('finalAmount').value }) });
+      if (result.error) { alert(result.error); return; }
+      const s = result.summary;
+      alert(`Caixa Fechado!\n\nVendas: ${formatCurrency(s.total_sales)}\nDinheiro: ${formatCurrency(s.total_cash)}\nCartão: ${formatCurrency(s.total_card)}\nPix: ${formatCurrency(s.total_pix)}\nEsperado: ${formatCurrency(s.expected_amount)}\nInformado: ${formatCurrency(s.final_amount)}\nDiferença: ${formatCurrency(s.difference)}`);
+      cashOpen = false;
+      document.getElementById('cashStatus').textContent = 'Caixa Fechado';
+      document.getElementById('cashStatus').className = 'text-xs bg-red-500 px-2 py-1 rounded-full';
+      document.getElementById('modalContainer').innerHTML = '';
+    }
+
+    // Products
+    async function showAllProducts() {
+      const data = await api('/api/products?limit=100&status=active');
+      allProducts = data.products.filter(p => p.total_stock > 0);
+      renderProducts(allProducts);
+    }
+
+    function renderProducts(products) {
+      document.getElementById('productGrid').innerHTML = products.map(p => `
+        <div class="product-card bg-white rounded-lg border overflow-hidden" onclick="addToCart(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${p.sku || ''}')">
+          <div class="aspect-square bg-gray-100 flex items-center justify-center p-2">
+            <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+          <div class="p-2">
+            <p class="text-xs font-medium text-gray-800 truncate">${p.name}</p>
+            <p class="text-sm font-bold text-indigo-600">${formatCurrency(p.price)}</p>
+            <p class="text-xs text-gray-400">Est: ${p.total_stock}</p>
+          </div>
+        </div>`).join('');
+    }
+
+    async function searchProducts() {
+      const query = document.getElementById('productSearch').value.trim();
+      if (!query) { renderProducts(allProducts); return; }
+      
+      // First try exact barcode/sku match
+      const results = await api(`/api/pdv/product/search?code=${encodeURIComponent(query)}`);
+      if (results.length > 0) {
+        if (results.length === 1) {
+          const p = results[0];
+          addToCart(p.id, p.name, p.variant_price || p.price, p.variant_sku || p.sku, p.variant_id, p.color, p.size);
+          document.getElementById('productSearch').value = '';
+          return;
+        }
+        renderProducts(results);
+      } else {
+        // Search by name
+        const data = await api(`/api/products?search=${encodeURIComponent(query)}&limit=20&status=active`);
+        renderProducts(data.products);
+      }
+    }
+
+    // Cart
+    function addToCart(productId, name, price, sku, variantId, color, size) {
+      const existing = cart.find(item => item.product_id === productId && item.variant_id === (variantId || null));
+      if (existing) {
+        existing.quantity++;
+      } else {
+        cart.push({ product_id: productId, variant_id: variantId || null, name, unit_price: price, sku, color: color || '', size: size || '', quantity: 1 });
+      }
+      updateCart();
+      document.getElementById('productSearch').value = '';
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCart();
+    }
+
+    function changeQty(index, delta) {
+      cart[index].quantity += delta;
+      if (cart[index].quantity <= 0) cart.splice(index, 1);
+      updateCart();
+    }
+
+    function updateCart() {
+      const itemsEl = document.getElementById('cartItems');
+      if (cart.length === 0) {
+        itemsEl.innerHTML = '<div class="p-8 text-center text-gray-400 text-sm">Carrinho vazio<br><span class="text-xs">Adicione produtos para iniciar a venda</span></div>';
+      } else {
+        itemsEl.innerHTML = cart.map((item, i) => `
+          <div class="cart-item p-3 flex items-center gap-2">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium truncate">${item.name}</p>
+              ${item.size || item.color ? `<p class="text-xs text-gray-500">${item.size ? 'Tam: ' + item.size : ''} ${item.color ? 'Cor: ' + item.color : ''}</p>` : ''}
+              <p class="text-xs text-gray-400">${formatCurrency(item.unit_price)} un.</p>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="changeQty(${i}, -1)" class="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-sm hover:bg-gray-200">-</button>
+              <span class="w-8 text-center text-sm font-medium">${item.quantity}</span>
+              <button onclick="changeQty(${i}, 1)" class="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-sm hover:bg-gray-200">+</button>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-bold">${formatCurrency(item.unit_price * item.quantity)}</p>
+              <button onclick="removeFromCart(${i})" class="text-xs text-red-500">Remover</button>
+            </div>
+          </div>`).join('');
+      }
+      const subtotal = cart.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+      const discount = parseFloat(document.getElementById('discountInput').value) || 0;
+      const total = subtotal - discount;
+      document.getElementById('cartSubtotal').textContent = formatCurrency(subtotal);
+      document.getElementById('cartTotal').textContent = formatCurrency(total);
+    }
+
+    function clearCart() {
+      if (cart.length === 0) return;
+      if (!confirm('Limpar carrinho?')) return;
+      cart = [];
+      document.getElementById('discountInput').value = 0;
+      updateCart();
+    }
+
+    // Finalize sale
+    async function finalizeSale(paymentMethod) {
+      if (cart.length === 0) { alert('Carrinho vazio!'); return; }
+      if (!cashOpen) { alert('Abra o caixa antes de vender!'); showOpenCashModal(); return; }
+
+      const subtotal = cart.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+      const discount = parseFloat(document.getElementById('discountInput').value) || 0;
+      const total = subtotal - discount;
+
+      const saleData = {
+        items: cart.map(item => ({ product_id: item.product_id, variant_id: item.variant_id, name: item.name, sku: item.sku, color: item.color, size: item.size, quantity: item.quantity, unit_price: item.unit_price })),
+        payment_method: paymentMethod,
+        discount: discount,
+        customer_id: document.getElementById('customerSelect').value || null,
+        seller_id: document.getElementById('sellerSelect').value || null
+      };
+
+      const result = await api('/api/pdv/sale', { method: 'POST', body: JSON.stringify(saleData) });
+      if (result.error) { alert(result.error); return; }
+
+      // Show receipt
+      const paymentLabels = { cash: 'Dinheiro', card: 'Cartão', pix: 'Pix', credit: 'Crediário' };
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-green-600 mb-2">Venda Realizada!</h3>
+            <p class="text-gray-500 mb-4">Pedido: ${result.order_number}</p>
+            <div class="bg-gray-50 rounded-lg p-3 text-left mb-4">
+              <div class="flex justify-between text-sm"><span>Total:</span><strong>${formatCurrency(total)}</strong></div>
+              <div class="flex justify-between text-sm"><span>Pagamento:</span><span>${paymentLabels[paymentMethod]}</span></div>
+            </div>
+            <button onclick="document.getElementById('modalContainer').innerHTML=''" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium">Nova Venda</button>
+          </div>
+        </div>`;
+
+      cart = [];
+      document.getElementById('discountInput').value = 0;
+      updateCart();
+      await showAllProducts();
+    }
+
+    // Load customers and sellers
+    async function loadCustomers() {
+      const data = await api('/api/customers?limit=100');
+      const select = document.getElementById('customerSelect');
+      select.innerHTML = '<option value="">Cliente (opcional)</option>' + data.customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    async function loadSellers() {
+      const sellers = await api('/api/sellers');
+      const select = document.getElementById('sellerSelect');
+      select.innerHTML = '<option value="">Vendedor (opcional)</option>' + sellers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    }
+
+    // Keyboard shortcut for barcode
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'F2') { e.preventDefault(); document.getElementById('productSearch').focus(); }
+      if (e.key === 'F4') { e.preventDefault(); finalizeSale('cash'); }
+      if (e.key === 'Escape') { document.getElementById('modalContainer').innerHTML = ''; }
+    });
+
+    init();
+  </script>
+</body>
+</html>
