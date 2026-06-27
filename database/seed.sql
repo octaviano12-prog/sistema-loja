@@ -31,7 +31,7 @@ INSERT INTO roles (company_id, name, permissions) VALUES
 -- ===========================================
 -- Senha: admin123
 INSERT INTO users (company_id, branch_id, role_id, name, email, password, status)
-VALUES (1, 1, 1, 'Administrador', 'admin@modacontrol.com.br', '$2a$10$YOUR_HASHED_PASSWORD_HERE', 'active');
+VALUES (1, 1, 1, 'Administrador', 'admin@modacontrol.com.br', '$2a$10$WYpYn.EhG5CkBZkn2P8PPOOrQtAI6xYJoT4W4odKhSQAd2z5RFBx.', 'active');
 
 -- ===========================================
 -- CATEGORIAS DE PRODUTOS
