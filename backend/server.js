@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // View engine
 app.set('view engine', 'ejs');
@@ -70,13 +71,21 @@ app.get('/health', async (req, res) => {
   });
 });
 
+function renderAdmin(req, res, next) {
+  res.render('admin/index', (err, html) => {
+    if (err) return next(err);
+
+    const cleanedHtml = html
+      .replace(/\s*<link href="https:\/\/cdn\.jsdelivr\.net\/npm\/chart\.js@4\.4\.0\/dist\/chart\.umd\.min\.js" rel="stylesheet">/g, '')
+      .replace(/new Chart\(/g, 'window.Chart && new Chart(');
+
+    res.send(cleanedHtml);
+  });
+}
+
 // Admin routes
-app.get('/admin', (req, res) => {
-  res.render('admin/index');
-});
-app.get('/admin/*', (req, res) => {
-  res.render('admin/index');
-});
+app.get('/admin', renderAdmin);
+app.get('/admin/*', renderAdmin);
 
 // Login
 app.get('/login', (req, res) => {
@@ -119,7 +128,6 @@ app.listen(PORT, () => {
   console.log(`📱 Loja online: http://localhost:${PORT}/`);
   console.log(`🔧 Painel admin: http://localhost:${PORT}/admin`);
   console.log(`💰 PDV: http://localhost:${PORT}/pdv`);
-  console.log(`🔑 Login: admin@modacontrol.com.br / admin123`);
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
   testConnection();
 });
