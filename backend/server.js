@@ -100,7 +100,8 @@ function renderAdmin(req, res, next) {
 
     const cleanedHtml = html
       .replace(/\s*<link href="https:\/\/cdn\.jsdelivr\.net\/npm\/chart\.js@4\.4\.0\/dist\/chart\.umd\.min\.js" rel="stylesheet">/g, '')
-      .replace(/new Chart\(/g, 'window.Chart && new Chart(');
+      .replace(/new Chart\(/g, 'window.Chart && new Chart(')
+      .replace('</body>', '<script src="/js/fiscal-admin.js?v=20260627"></script></body>');
 
     res.send(cleanedHtml);
   });
