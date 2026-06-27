@@ -2,10 +2,33 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 require('dotenv').config();
-const { testConnection } = require('./config/database');
+const { testConnection, db } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Compatibilidade do adaptador MySQL com as rotas que esperam insertId
+if (db && typeof db.prepare === 'function' && !db.__insertIdPatched) {
+  const originalPrepare = db.prepare.bind(db);
+  db.prepare = function patchedPrepare(sql) {
+    const statement = originalPrepare(sql);
+    if (statement && typeof statement.run === 'function') {
+      const originalRun = statement.run.bind(statement);
+      statement.run = async (...params) => {
+        const result = await originalRun(...params);
+        if (result && result.insertId === undefined && result.lastInsertRowid !== undefined) {
+          result.insertId = result.lastInsertRowid;
+        }
+        if (result && result.affectedRows === undefined && result.changes !== undefined) {
+          result.affectedRows = result.changes;
+        }
+        return result;
+      };
+    }
+    return statement;
+  };
+  db.__insertIdPatched = true;
+}
 
 // Middleware
 app.use(cors({
@@ -111,7 +134,7 @@ app.get('/store/*', (req, res) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Erro interno do servidor',
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
